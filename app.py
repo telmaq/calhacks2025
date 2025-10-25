@@ -1,17 +1,19 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form, HTTPException, Depends, Header
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 import cv2
 import numpy as np
 import json
 import base64
 from typing import List, Optional
 from ultralytics import YOLO
-import pytesseract
+import httpx
 from pydantic import BaseModel
 import re
 import os
 from dotenv import load_dotenv
+import anthropic
 load_dotenv()
 
 app = FastAPI(
@@ -22,9 +24,23 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
 # Security
 security = HTTPBearer()
 API_KEY = os.getenv("API_KEY", "your-secret-api-key-here")
+
+# Claude API configuration
+CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
+# Initialize Claude client
+claude_client = anthropic.Anthropic(api_key=CLAUDE_API_KEY) if CLAUDE_API_KEY else None
 
 # def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
 #     """Verify API key for authentication"""
@@ -76,8 +92,8 @@ def initialize_models():
         model = YOLO('yolov8m.pt')  # Medium model - best accuracy within 4GB limit
         print("  ✅ YOLOv8 model loaded successfully")
 
-        print("  - Tesseract OCR ready...")
-        print("  ✅ Tesseract OCR loaded successfully")
+        print("  - Claude API ready...")
+        print("  ✅ Claude API configured successfully")
 
         print("🎉 All models initialized successfully!")
 
@@ -94,42 +110,117 @@ def get_model():
         model = YOLO('yolov8m.pt')  # Medium model
     return model
 
-def extract_weight_from_scale(frame: np.ndarray) -> dict:
+async def extract_weight_from_scale(frame: np.ndarray) -> dict:
     """
-    Extract weight from digital scale display using Tesseract OCR.
+    Extract weight from digital scale display using Claude API.
     """
-    # Convert to grayscale for better OCR
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    # Run OCR with Tesseract
-    text = pytesseract.image_to_string(gray)
-
-    # Look for weight pattern (e.g., "5.2 kg" or "1.5kg")
-    import re
-    weight_pattern = r'(\d+\.?\d*)\s*(kg|lb|g|oz)?'
-
-    # Try to match weight pattern in extracted text
-    match = re.search(weight_pattern, text, re.IGNORECASE)
-    if match:
-        weight = float(match.group(1))
-        unit = match.group(2).lower() if match.group(2) else 'kg'
-
+    if not claude_client:
+        print("❌ Claude API key not configured. Set CLAUDE_API_KEY environment variable.")
         return {
-            'weight': weight,
-            'unit': unit,
-            'confidence': 0.9,  # Tesseract doesn't provide per-char confidence easily
-            'raw_text': text.strip(),
-            'method': 'ocr'
+            'weight': 0.0,
+            'unit': 'g',
+            'confidence': 0.0,
+            'error': 'Claude API key not configured',
+            'method': 'claude_api'
         }
 
-    # No weight found
-    print("No weight found")
+    try:
+        # Convert image to base64 for Claude API
+        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+        image_base64 = base64.b64encode(buffer).decode('utf-8')
+
+        # Call Claude API using the official SDK
+        message = claude_client.messages.create(
+            model="claude-haiku-4-5",  # fastest model
+            max_tokens=100,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": image_base64
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": """Look at this digital scale display and extract the weight value and unit.
+
+You must respond with ONLY a valid JSON object in this exact format:
+{
+    "weight": <number>,
+    "unit": "<unit>",
+    "confidence": <0.0-1.0>
+}
+
+Examples:
+- If you see "54 g" return: {"weight": 54, "unit": "g", "confidence": 0.95}
+- If you see "1.5 kg" return: {"weight": 1.5, "unit": "kg", "confidence": 0.90}
+- If you see just "25" return: {"weight": 25, "unit": "g", "confidence": 0.85}
+
+If you cannot clearly read a weight value, return: {"weight": 0, "unit": "g", "confidence": 0.0}
+
+Focus on the digital display area and ignore any other text or numbers in the image. Return ONLY the JSON object, no other text."""
+                        }
+                    ]
+                }
+            ]
+        )
+
+        # Extract content from response
+        content = message.content[0].text
+
+        # Parse Claude's response
+        try:
+            print(f"🔍 Claude raw response: {content}")
+
+            # Try to parse the entire response as JSON first
+            try:
+                weight_data = json.loads(content.strip())
+            except json.JSONDecodeError:
+                # If that fails, try to extract JSON from the response
+                json_match = re.search(r'\{[^{}]*\}', content)
+                if json_match:
+                    weight_data = json.loads(json_match.group())
+                else:
+                    print(f"❌ No valid JSON found in Claude response: {content}")
+                    raise ValueError("No valid JSON found")
+
+            # Validate the response
+            if 'weight' in weight_data and 'unit' in weight_data and 'confidence' in weight_data:
+                weight = float(weight_data['weight'])
+                unit = str(weight_data['unit']).lower().strip()
+                confidence = float(weight_data['confidence'])
+
+                print(f"✅ Claude detected: {weight} {unit} (confidence: {confidence:.2f})")
+
+                return {
+                    'weight': weight,
+                    'unit': unit,
+                    'confidence': confidence,
+                    'raw_text': f"{weight} {unit}",
+                    'method': 'claude_api'
+                }
+            else:
+                print(f"❌ Invalid Claude response format: {weight_data}")
+                print(f"   Missing required fields: weight={weight_data.get('weight')}, unit={weight_data.get('unit')}, confidence={weight_data.get('confidence')}")
+
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            print(f"❌ Error parsing Claude response: {e}")
+            print(f"   Response: {content}")
+
+    except Exception as e:
+        print(f"❌ Claude API error: {e}")
+
     return {
         'weight': 0.0,
-        'unit': 'kg',
+        'unit': 'g',
         'confidence': 0.0,
-        'error': 'No weight detected in image',
-        'method': 'ocr'
+        'error': 'Failed to read weight from image',
+        'method': 'claude_api'
     }
 def detect_produce(frame: np.ndarray) -> dict:
     """Detect produce items using YOLOv8 object detection"""
@@ -189,7 +280,7 @@ def detect_produce(frame: np.ndarray) -> dict:
 
 @app.post("/api/v1/capture/weight",
           summary="Capture Weight from Scale Image",
-          description="Extract weight value from a digital scale image using computer vision and OCR",
+          description="Extract weight value from a digital scale image using Claude AI vision",
           response_description="Weight data extracted from the image",
           tags=["Weight Capture"])
 async def capture_weight(
@@ -203,12 +294,12 @@ async def capture_weight(
     print(f"   - image_base64 length: {len(request.image_base64) if request.image_base64 else 0}")
     # print(f"   - API key: {api_key[:10]}...")
     """
-    Capture weight from a scale image using computer vision and OCR.
+    Capture weight from a scale image using Claude AI vision.
 
     **Process:**
     1. Receives image and context (farmer_id, produce_name)
-    2. Runs computer vision to detect the scale display
-    3. Runs OCR to extract weight value and unit
+    2. Sends image to Claude API for analysis
+    3. Claude extracts weight value and unit from digital display
     4. Validates the extracted data
     5. Returns structured weight data
 
@@ -272,8 +363,8 @@ async def capture_weight(
                 content={"error": "Invalid image data"}
             )
 
-        # Extract weight from scale
-        weight_data = extract_weight_from_scale(frame)
+        # Extract weight from scale using Claude API
+        weight_data = await extract_weight_from_scale(frame)
 
         # Validate weight
         if weight_data['weight'] <= 0:
