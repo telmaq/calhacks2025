@@ -256,7 +256,7 @@ async def capture_weight(
             padding = len(image_base64) % 4
             if padding:
                 image_base64 += '=' * (4 - padding)
-            
+
             image_data = base64.b64decode(image_base64)
         except Exception as decode_error:
             return JSONResponse(
