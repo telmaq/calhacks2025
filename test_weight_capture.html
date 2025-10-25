@@ -58,6 +58,20 @@
       <video id="video" autoplay></video>
 
       <div>
+        <select
+          id="cameraSelect"
+          style="
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            background: #222;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 5px;
+          "
+        >
+          <option value="">Select Camera...</option>
+        </select>
         <input
           type="text"
           id="farmerId"
@@ -83,10 +97,53 @@
 
     <script>
       let stream = null;
+      let devices = [];
 
-      async function startCamera() {
+      async function loadCameras() {
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(
+            (device) => device.kind === "videoinput"
+          );
+
+          const cameraSelect = document.getElementById("cameraSelect");
+          cameraSelect.innerHTML = '<option value="">Select Camera...</option>';
+
+          let c270DeviceId = null;
+
+          videoDevices.forEach((device, index) => {
+            const option = document.createElement("option");
+            option.value = device.deviceId;
+            option.textContent = device.label || `Camera ${index + 1}`;
+            cameraSelect.appendChild(option);
+
+            // Check if this is the C270 webcam
+            if (device.label && device.label.toLowerCase().includes("c270")) {
+              c270DeviceId = device.deviceId;
+            }
+          });
+
+          // Auto-select C270 if found
+          if (c270DeviceId) {
+            cameraSelect.value = c270DeviceId;
+            startCamera(c270DeviceId);
+          }
+        } catch (error) {
+          updateStatus(`Error loading cameras: ${error.message}`, "error");
+        }
+      }
+
+      async function startCamera(deviceId = null) {
+        try {
+          if (stream) {
+            stream.getTracks().forEach((track) => track.stop());
+          }
+
+          const constraints = {
+            video: deviceId ? { deviceId: { exact: deviceId } } : true
+          };
+
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
           const video = document.getElementById("video");
           video.srcObject = stream;
         } catch (error) {
@@ -126,7 +183,7 @@
         // Send to API
         try {
           const response = await fetch(
-            "http://localhost:8001/api/v1/capture/weight",
+            "http://localhost:8000/api/v1/capture/weight",
             {
               method: "POST",
               headers: {
@@ -153,8 +210,18 @@
         }
       }
 
-      // Start camera on page load
-      startCamera();
+      // Load cameras (will auto-start C270 if found)
+      loadCameras();
+
+      // Handle camera selection change
+      document
+        .getElementById("cameraSelect")
+        .addEventListener("change", function () {
+          const selectedDeviceId = this.value;
+          if (selectedDeviceId) {
+            startCamera(selectedDeviceId);
+          }
+        });
     </script>
   </body>
 </html>

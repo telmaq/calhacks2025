@@ -167,7 +167,29 @@
 
       async function startCamera() {
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          // Try to find C270 webcam first
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(
+            (device) => device.kind === "videoinput"
+          );
+
+          // Look for C270 webcam
+          const c270Device = videoDevices.find(
+            (device) =>
+              device.label && device.label.toLowerCase().includes("c270")
+          );
+
+          let constraints = { video: true };
+          if (c270Device) {
+            constraints = {
+              video: { deviceId: { exact: c270Device.deviceId } }
+            };
+            log(`Using C270 webcam: ${c270Device.label}`);
+          } else {
+            log("C270 not found, using default camera");
+          }
+
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
           const video = document.getElementById("video");
           video.srcObject = stream;
 
