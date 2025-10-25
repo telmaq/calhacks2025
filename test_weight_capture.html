@@ -101,6 +101,11 @@
 
       async function loadCameras() {
         try {
+          // Request permission first to get device labels
+          updateStatus("Requesting camera access...", "");
+          await navigator.mediaDevices.getUserMedia({ video: true });
+          
+          // Now enumerate devices (they'll have labels now)
           devices = await navigator.mediaDevices.enumerateDevices();
           const videoDevices = devices.filter(
             (device) => device.kind === "videoinput"
@@ -127,9 +132,15 @@
           if (c270DeviceId) {
             cameraSelect.value = c270DeviceId;
             startCamera(c270DeviceId);
+          } else {
+            updateStatus("Select a camera from the dropdown", "");
           }
         } catch (error) {
-          updateStatus(`Error loading cameras: ${error.message}`, "error");
+          console.error("Error loading cameras:", error);
+          const errorMsg = error.name === 'NotAllowedError'
+            ? 'Camera permission denied. Please click "Allow" when prompted.'
+            : `Error: ${error.message}`;
+          updateStatus(errorMsg, "error");
         }
       }
 
@@ -146,8 +157,13 @@
           stream = await navigator.mediaDevices.getUserMedia(constraints);
           const video = document.getElementById("video");
           video.srcObject = stream;
+          updateStatus("Camera connected", "success");
         } catch (error) {
-          updateStatus(`Camera error: ${error.message}`, "error");
+          console.error("Camera error:", error);
+          const errorMsg = error.name === 'NotAllowedError' 
+            ? 'Camera permission denied. Please allow camera access and refresh.'
+            : `Camera error: ${error.message}`;
+          updateStatus(errorMsg, "error");
         }
       }
 
@@ -182,20 +198,20 @@
 
         // Send to API
         try {
-          const response = await fetch(
-            "http://localhost:8000/api/v1/capture/weight",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                farmer_id: farmerId,
-                produce_name: produceName,
-                image_base64: base64
-              })
-            }
-          );
+          // Use current origin (works for localhost and Railway)
+          const apiUrl = `${window.location.origin}/api/v1/capture/weight`;
+          
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              farmer_id: farmerId,
+              produce_name: produceName,
+              image_base64: base64
+            })
+          });
 
           const data = await response.json();
 
