@@ -12,3 +12,9 @@ ENV/
 *.jpeg
 .DS_Store
 .env
+# Model files
+*.pt
+*.pth
+*.pkl
+*.h5
+*.onnx

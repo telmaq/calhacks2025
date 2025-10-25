@@ -28,6 +28,9 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p ~/.cache/torch/hub/checkpoints
 
+# Download YOLOv8 model during build
+RUN python -c "from ultralytics import YOLO; YOLO('yolov8m.pt')"
+
 # Expose port
 EXPOSE 8000
 
