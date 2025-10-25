@@ -1,1 +1,1 @@
-calhacks2025
+*calhacks2025
