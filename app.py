@@ -249,14 +249,20 @@ async def capture_weight(
                 content={"error": "image_base64 is required"}
             )
 
-        # Fix base64 padding if needed
-        image_base64 = request.image_base64.strip()
-        # Add padding if needed
-        padding = len(image_base64) % 4
-        if padding:
-            image_base64 += '=' * (4 - padding)
-
-        image_data = base64.b64decode(image_base64)
+        # Fix base64 padding if needed and decode
+        try:
+            image_base64 = request.image_base64.strip()
+            # Add padding if needed
+            padding = len(image_base64) % 4
+            if padding:
+                image_base64 += '=' * (4 - padding)
+            
+            image_data = base64.b64decode(image_base64)
+        except Exception as decode_error:
+            return JSONResponse(
+                status_code=400,
+                content={"error": f"Invalid base64 encoding: {str(decode_error)}"}
+            )
         nparr = np.frombuffer(image_data, np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
