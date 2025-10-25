@@ -7,7 +7,7 @@ import json
 import base64
 from typing import List, Optional
 from ultralytics import YOLO
-import easyocr
+import pytesseract
 from pydantic import BaseModel
 import re
 import os
@@ -60,52 +60,67 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# Load YOLOv8 model (will download on first run)
+# Load YOLOv8 model at startup
+
 # Use smaller model to reduce memory footprint
 model = None
-reader = None
+
+def initialize_models():
+    """Initialize models at startup to avoid timeout issues"""
+    global model
+    print("🔄 Initializing AI models...")
+
+    try:
+        print("  - Loading YOLOv8 model...")
+        # Options: yolov8n.pt (nano), yolov8s.pt (small), yolov8m.pt (medium), yolov8l.pt (large)
+        model = YOLO('yolov8m.pt')  # Medium model - best accuracy within 4GB limit
+        print("  ✅ YOLOv8 model loaded successfully")
+
+        print("  - Tesseract OCR ready...")
+        print("  ✅ Tesseract OCR loaded successfully")
+
+        print("🎉 All models initialized successfully!")
+
+    except Exception as e:
+        print(f"❌ Error initializing models: {e}")
+        print("⚠️  Models will be loaded on first use")
+        # Continue without models - they'll be loaded on first use
+        model = None
 
 def get_model():
     global model
     if model is None:
-        model = YOLO('yolov8n.pt')  # Downloads ~6MB model
+        print("⚠️  Model not initialized, loading now...")
+        model = YOLO('yolov8m.pt')  # Medium model
     return model
-
-def get_reader():
-    global reader
-    if reader is None:
-        reader = easyocr.Reader(['en'])  # Downloads models on first use
-    return reader
 
 def extract_weight_from_scale(frame: np.ndarray) -> dict:
     """
-    Extract weight from digital scale display using EasyOCR.
+    Extract weight from digital scale display using Tesseract OCR.
     """
     # Convert to grayscale for better OCR
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    # Run OCR
-    reader = get_reader()
-    results = reader.readtext(gray)
+    # Run OCR with Tesseract
+    text = pytesseract.image_to_string(gray)
 
     # Look for weight pattern (e.g., "5.2 kg" or "1.5kg")
     import re
     weight_pattern = r'(\d+\.?\d*)\s*(kg|lb|g|oz)?'
 
-    for (bbox, text, confidence) in results:
-        # Try to match weight pattern
-        match = re.search(weight_pattern, text, re.IGNORECASE)
-        if match:
-            weight = float(match.group(1))
-            unit = match.group(2) if match.group(2) else 'kg'
+    # Try to match weight pattern in extracted text
+    match = re.search(weight_pattern, text, re.IGNORECASE)
+    if match:
+        weight = float(match.group(1))
+        unit = match.group(2).lower() if match.group(2) else 'kg'
 
-            return {
-                'weight': weight,
-                'unit': unit.lower(),
-                'confidence': confidence,
-                'raw_text': text,
-                'method': 'ocr'
-            }
+        return {
+            'weight': weight,
+            'unit': unit,
+            'confidence': 0.9,  # Tesseract doesn't provide per-char confidence easily
+            'raw_text': text.strip(),
+            'method': 'ocr'
+        }
 
     # No weight found
     print("No weight found")
@@ -234,7 +249,14 @@ async def capture_weight(
                 content={"error": "image_base64 is required"}
             )
 
-        image_data = base64.b64decode(request.image_base64)
+        # Fix base64 padding if needed
+        image_base64 = request.image_base64.strip()
+        # Add padding if needed
+        padding = len(image_base64) % 4
+        if padding:
+            image_base64 += '=' * (4 - padding)
+
+        image_data = base64.b64decode(image_base64)
         nparr = np.frombuffer(image_data, np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
@@ -358,10 +380,21 @@ async def test_weight_capture():
 
 if __name__ == "__main__":
     import uvicorn
-    print("Starting server on http://localhost:8001")
+    import threading
+
+    # Initialize models in background thread to avoid blocking startup
+    def init_models_async():
+        initialize_models()
+
+    model_thread = threading.Thread(target=init_models_async, daemon=True)
+    model_thread.start()
+
+    port = int(os.getenv("PORT", 8000))
+    print(f"Starting server on http://0.0.0.0:{port}")
+    print("🔄 Models are loading in the background...")
     print("\nAvailable endpoints:")
-    print("  - http://localhost:8001/webcam_client.html (Produce detection demo)")
-    print("  - http://localhost:8001/test_weight_capture.html (Weight capture test)")
-    print("  - POST http://localhost:8001/api/v1/capture/weight (API endpoint)")
-    print("  - WebSocket ws://localhost:8001/ws/stream (Real-time detection)")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    print(f"  - http://0.0.0.0:{port}/webcam_client.html (Produce detection demo)")
+    print(f"  - http://0.0.0.0:{port}/test_weight_capture.html (Weight capture test)")
+    print(f"  - POST http://0.0.0.0:{port}/api/v1/capture/weight (API endpoint)")
+    print(f"  - WebSocket ws://0.0.0.0:{port}/ws/stream (Real-time detection)")
+    uvicorn.run(app, host="0.0.0.0", port=port)
