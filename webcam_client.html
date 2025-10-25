@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Webcam Client</title>
+    <style>
+      body {
+        font-family: Arial;
+        margin: 20px;
+        background: #000;
+        color: #fff;
+      }
+      #container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      #video {
+        width: 100%;
+        border: 2px solid #333;
+      }
+      button {
+        padding: 15px 30px;
+        font-size: 16px;
+        margin: 10px 5px;
+        background: #007aff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:disabled {
+        background: #555;
+        cursor: not-allowed;
+      }
+      .status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        background: #333;
+      }
+      #log {
+        max-height: 200px;
+        overflow-y: auto;
+        background: #222;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1>📹 Produce Detection</h1>
+
+      <img
+        id="annotatedImage"
+        style="width: 100%; border: 2px solid #333; display: none"
+      />
+      <video id="video" autoplay></video>
+
+      <div>
+        <button id="startBtn" onclick="start()">Start Camera</button>
+        <button id="stopBtn" onclick="stop()" disabled>Stop</button>
+      </div>
+
+      <div class="status" id="status">Enter server URL and click Start</div>
+
+      <div style="margin: 10px 0">
+        <input
+          type="text"
+          id="serverUrl"
+          value="ws://localhost:8001/ws/stream"
+          style="
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #555;
+            background: #222;
+            color: #fff;
+            border-radius: 5px;
+          "
+        />
+      </div>
+
+      <div id="log"></div>
+    </div>
+
+    <script>
+      let ws = null;
+      let stream = null;
+      let canvas = document.createElement("canvas");
+      let ctx = canvas.getContext("2d");
+      let interval = null;
+
+      function log(msg) {
+        const logDiv = document.getElementById("log");
+        logDiv.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+      }
+
+      function updateStatus(msg) {
+        document.getElementById("status").textContent = msg;
+      }
+
+      async function start() {
+        const serverUrl = document.getElementById("serverUrl").value;
+
+        // Connect WebSocket
+        updateStatus("Connecting...");
+        log(`Connecting to ${serverUrl}`);
+
+        ws = new WebSocket(serverUrl);
+
+        ws.onopen = () => {
+          log("Connected!");
+          updateStatus("Connected - Starting camera...");
+          startCamera();
+        };
+
+        ws.onerror = (error) => {
+          log("WebSocket error");
+          updateStatus("Connection error");
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+
+            if (data.detection) {
+              const objects = data.detection.detected_objects || [];
+              const objectNames = objects.map((obj) => obj.class).join(", ");
+              updateStatus(
+                `Produce detected: ${data.detection.objects_detected} items - ${objectNames}`
+              );
+
+              // Log detailed detection info
+              if (objects.length > 0) {
+                objects.forEach((obj) => {
+                  log(
+                    `${obj.class}: ${(obj.confidence * 100).toFixed(
+                      1
+                    )}% confidence`
+                  );
+                });
+              }
+            }
+            if (data.annotated_frame) {
+              // Display annotated frame with produce contours
+              const video = document.getElementById("video");
+              const annotatedImg = document.getElementById("annotatedImage");
+
+              annotatedImg.src = `data:image/jpeg;base64,${data.annotated_frame}`;
+
+              // Show annotated image
+              video.style.display = "none";
+              annotatedImg.style.display = "block";
+            }
+            if (data.weight_data) {
+              log(
+                `Weight: ${data.weight_data.weight} ${data.weight_data.unit}`
+              );
+            }
+          } catch (e) {
+            log(`Parse error: ${e.message}`);
+          }
+        };
+      }
+
+      async function startCamera() {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const video = document.getElementById("video");
+          video.srcObject = stream;
+
+          updateStatus("Streaming...");
+          log("Camera started");
+
+          document.getElementById("startBtn").disabled = true;
+          document.getElementById("stopBtn").disabled = false;
+
+          // Send frames
+          interval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN && stream) {
+              captureAndSend();
+            }
+          }, 500); // Every 500ms
+        } catch (error) {
+          log(`Camera error: ${error.message}`);
+          updateStatus("Camera access denied");
+        }
+      }
+
+      function captureAndSend() {
+        const video = document.getElementById("video");
+
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
+
+          canvas.toBlob(
+            (blob) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const base64 = reader.result.split(",")[1];
+                ws.send(
+                  JSON.stringify({
+                    type: "frame",
+                    data: base64,
+                    timestamp: Date.now()
+                  })
+                );
+              };
+              reader.readAsDataURL(blob);
+            },
+            "image/jpeg",
+            0.7
+          );
+        }
+      }
+
+      function stop() {
+        if (interval) clearInterval(interval);
+        if (stream) stream.getTracks().forEach((track) => track.stop());
+        if (ws) ws.close();
+
+        document.getElementById("video").srcObject = null;
+        document.getElementById("startBtn").disabled = false;
+        document.getElementById("stopBtn").disabled = true;
+
+        updateStatus("Stopped");
+        log("Stopped");
+      }
+    </script>
+  </body>
+</html>
