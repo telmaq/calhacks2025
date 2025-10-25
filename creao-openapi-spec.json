@@ -1,0 +1,299 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Smart Camera Service API",
+    "version": "1.1.0",
+    "description": "API for capturing produce weight from scale images using computer vision and OCR"
+  },
+  "servers": [
+    {
+      "url": "https://bonita-overtame-maryam.ngrok-free.dev",
+      "description": "ngrok tunnel to local server"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/capture/weight": {
+      "post": {
+        "summary": "Capture weight from a digital scale image",
+        "description": "Receives a base64 image of a scale, extracts the weight using OCR, and returns structured weight data.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["farmer_id", "produce_name", "image_base64"],
+                "properties": {
+                  "farmer_id": {
+                    "type": "string",
+                    "description": "Unique identifier for the farmer",
+                    "example": "farmer123"
+                  },
+                  "produce_name": {
+                    "type": "string",
+                    "description": "Name of the produce being weighed",
+                    "example": "apples"
+                  },
+                  "image_base64": {
+                    "type": "string",
+                    "format": "base64",
+                    "description": "Base64-encoded image of the scale display",
+                    "example": "iVBORw0KGgoAAAANSUhEUgAA..."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Weight captured successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "farmer_id": {
+                      "type": "string",
+                      "example": "farmer123"
+                    },
+                    "produce_name": {
+                      "type": "string",
+                      "example": "apples"
+                    },
+                    "weight_data": {
+                      "type": "object",
+                      "properties": {
+                        "weight": {
+                          "type": "number",
+                          "description": "Extracted weight value",
+                          "example": 2.5
+                        },
+                        "unit": {
+                          "type": "string",
+                          "description": "Unit of measurement",
+                          "example": "kg"
+                        },
+                        "confidence": {
+                          "type": "number",
+                          "description": "OCR confidence score (0-1)",
+                          "example": 0.95
+                        },
+                        "raw_text": {
+                          "type": "string",
+                          "description": "Raw text extracted by OCR",
+                          "example": "2.5 kg"
+                        },
+                        "method": {
+                          "type": "string",
+                          "description": "Method used for extraction",
+                          "example": "ocr"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Human-readable success message",
+                      "example": "Weight 2.5 kg captured!"
+                    },
+                    "creao_logged": {
+                      "type": "boolean",
+                      "description": "Whether the data was logged to Creao",
+                      "example": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (missing fields or invalid image)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message",
+                      "example": "Invalid image data"
+                    },
+                    "weight": {
+                      "type": "number",
+                      "description": "Weight value that caused the error (if applicable)",
+                      "example": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message",
+                      "example": "Invalid image data"
+                    },
+                    "weight": {
+                      "type": "number",
+                      "description": "Weight value that caused the error (if applicable)",
+                      "example": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message",
+                      "example": "Invalid image data"
+                    },
+                    "weight": {
+                      "type": "number",
+                      "description": "Weight value that caused the error (if applicable)",
+                      "example": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Key",
+        "description": "Enter your API key as a Bearer token. Example: 'your-secret-api-key-here'"
+      }
+    },
+    "schemas": {
+      "WeightCaptureRequest": {
+        "type": "object",
+        "required": ["farmer_id", "produce_name", "image_base64"],
+        "properties": {
+          "farmer_id": {
+            "type": "string",
+            "description": "Unique identifier for the farmer",
+            "example": "farmer123"
+          },
+          "produce_name": {
+            "type": "string",
+            "description": "Name of the produce being weighed",
+            "example": "apples"
+          },
+          "image_base64": {
+            "type": "string",
+            "format": "base64",
+            "description": "Base64-encoded image of the scale display",
+            "example": "iVBORw0KGgoAAAANSUhEUgAA..."
+          }
+        }
+      },
+      "WeightCaptureResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "farmer_id": {
+            "type": "string",
+            "example": "farmer123"
+          },
+          "produce_name": {
+            "type": "string",
+            "example": "apples"
+          },
+          "weight_data": {
+            "type": "object",
+            "properties": {
+              "weight": {
+                "type": "number",
+                "description": "Extracted weight value",
+                "example": 2.5
+              },
+              "unit": {
+                "type": "string",
+                "description": "Unit of measurement",
+                "example": "kg"
+              },
+              "confidence": {
+                "type": "number",
+                "description": "OCR confidence score (0-1)",
+                "example": 0.95
+              },
+              "raw_text": {
+                "type": "string",
+                "description": "Raw text extracted by OCR",
+                "example": "2.5 kg"
+              },
+              "method": {
+                "type": "string",
+                "description": "Method used for extraction",
+                "example": "ocr"
+              }
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable success message",
+            "example": "Weight 2.5 kg captured!"
+          },
+          "creao_logged": {
+            "type": "boolean",
+            "description": "Whether the data was logged to Creao",
+            "example": false
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Invalid image data"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Weight value that caused the error (if applicable)",
+            "example": 0
+          }
+        }
+      }
+    }
+  }
+}

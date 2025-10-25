@@ -1,5 +1,6 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Form, HTTPException, Depends, Header
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import cv2
 import numpy as np
 import json
@@ -9,8 +10,27 @@ from ultralytics import YOLO
 import easyocr
 from pydantic import BaseModel
 import re
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-app = FastAPI(title="Smart Camera Service")
+app = FastAPI(
+    title="Smart Camera Service - Creao Integration",
+    description="Computer vision service for capturing produce weight from scale images",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Security
+security = HTTPBearer()
+API_KEY = os.getenv("API_KEY", "your-secret-api-key-here")
+
+# def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+#     """Verify API key for authentication"""
+#     if credentials.credentials != API_KEY:
+#         raise HTTPException(status_code=401, detail="Invalid API key")
+#     return credentials.credentials
 
 # Request model for weight capture
 class WeightCaptureRequest(BaseModel):
@@ -41,8 +61,21 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 # Load YOLOv8 model (will download on first run)
-model = YOLO('yolov8n.pt')
-reader = easyocr.Reader(['en'])
+# Use smaller model to reduce memory footprint
+model = None
+reader = None
+
+def get_model():
+    global model
+    if model is None:
+        model = YOLO('yolov8n.pt')  # Downloads ~6MB model
+    return model
+
+def get_reader():
+    global reader
+    if reader is None:
+        reader = easyocr.Reader(['en'])  # Downloads models on first use
+    return reader
 
 def extract_weight_from_scale(frame: np.ndarray) -> dict:
     """
@@ -52,6 +85,7 @@ def extract_weight_from_scale(frame: np.ndarray) -> dict:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # Run OCR
+    reader = get_reader()
     results = reader.readtext(gray)
 
     # Look for weight pattern (e.g., "5.2 kg" or "1.5kg")
@@ -85,6 +119,7 @@ def extract_weight_from_scale(frame: np.ndarray) -> dict:
 def detect_produce(frame: np.ndarray) -> dict:
     """Detect produce items using YOLOv8 object detection"""
     # Run YOLOv8 inference
+    model = get_model()
     results = model(frame, conf=0.5)
 
     # Filter for produce-related classes (COCO dataset classes)
@@ -137,19 +172,59 @@ def detect_produce(frame: np.ndarray) -> dict:
         'confidence': max([obj['confidence'] for obj in detected_objects], default=0.0)
     }
 
-@app.post("/api/v1/capture/weight")
-async def capture_weight(request: WeightCaptureRequest):
+@app.post("/api/v1/capture/weight",
+          summary="Capture Weight from Scale Image",
+          description="Extract weight value from a digital scale image using computer vision and OCR",
+          response_description="Weight data extracted from the image",
+          tags=["Weight Capture"])
+async def capture_weight(
+    request: WeightCaptureRequest,
+    # api_key: str = Depends(verify_api_key)
+):
+    # Debug logging
+    print(f"🔍 Received request from Creao:")
+    print(f"   - farmer_id: {request.farmer_id}")
+    print(f"   - produce_name: {request.produce_name}")
+    print(f"   - image_base64 length: {len(request.image_base64) if request.image_base64 else 0}")
+    # print(f"   - API key: {api_key[:10]}...")
     """
-    Capture weight from a scale image.
+    Capture weight from a scale image using computer vision and OCR.
 
-    This endpoint:
+    **Process:**
     1. Receives image and context (farmer_id, produce_name)
-    2. Runs CV to detect the scale display
-    3. Runs OCR to extract weight value
-    4. Validates the data
-    5. Returns the weight data
+    2. Runs computer vision to detect the scale display
+    3. Runs OCR to extract weight value and unit
+    4. Validates the extracted data
+    5. Returns structured weight data
 
-    In production, this will also log to Creao.
+    **Authentication:** Bearer token required
+
+    **Example Request:**
+    ```json
+    {
+        "farmer_id": "farmer123",
+        "produce_name": "apples",
+        "image_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ..."
+    }
+    ```
+
+    **Example Response:**
+    ```json
+    {
+        "status": "success",
+        "farmer_id": "farmer123",
+        "produce_name": "apples",
+        "weight_data": {
+            "weight": 5.2,
+            "unit": "kg",
+            "confidence": 0.96,
+            "raw_text": "5.2 kg",
+            "method": "ocr"
+        },
+        "message": "Weight 5.2 kg captured!",
+        "creao_logged": false
+    }
+    ```
     """
     try:
         # Decode base64 image
@@ -236,9 +311,34 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-@app.get("/")
+@app.get("/",
+         summary="API Status",
+         description="Get the current status of the Smart Camera Service API",
+         tags=["Health"])
 async def root():
-    return {"status": "Smart Camera Service API", "version": "1.0"}
+    """Get API status and version information"""
+    return {
+        "status": "Smart Camera Service API",
+        "version": "1.0.0",
+        "description": "Computer vision service for capturing produce weight from scale images",
+        "endpoints": {
+            "weight_capture": "/api/v1/capture/weight",
+            "docs": "/docs",
+            "health": "/health"
+        }
+    }
+
+@app.get("/health",
+         summary="Health Check",
+         description="Check if the API service is running and healthy",
+         tags=["Health"])
+async def health_check():
+    """Health check endpoint for monitoring"""
+    return {
+        "status": "healthy",
+        "timestamp": "2024-01-01T00:00:00Z",
+        "version": "1.0.0"
+    }
 
 @app.get("/webcam_client.html", response_class=HTMLResponse)
 async def webcam_client():

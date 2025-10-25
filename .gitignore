@@ -11,3 +11,4 @@ ENV/
 *.png
 *.jpeg
 .DS_Store
+.env
