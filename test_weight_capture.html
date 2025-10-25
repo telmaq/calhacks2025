@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Weight Capture Test</title>
+    <style>
+      body {
+        font-family: Arial;
+        margin: 20px;
+        background: #000;
+        color: #fff;
+      }
+      #container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      video {
+        width: 100%;
+        border: 2px solid #333;
+      }
+      button {
+        padding: 15px 30px;
+        font-size: 16px;
+        margin: 10px 5px;
+        background: #007aff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      input {
+        padding: 10px;
+        margin: 10px 0;
+        width: 100%;
+        background: #222;
+        color: #fff;
+        border: 1px solid #555;
+        border-radius: 5px;
+      }
+      .status {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        background: #333;
+        min-height: 50px;
+      }
+      .success {
+        background: #0a3;
+      }
+      .error {
+        background: #a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1>📸 Weight Capture Test</h1>
+
+      <video id="video" autoplay></video>
+
+      <div>
+        <input
+          type="text"
+          id="farmerId"
+          placeholder="Farmer ID (e.g., farmer123)"
+          value="farmer123"
+        />
+        <input
+          type="text"
+          id="produceName"
+          placeholder="Produce Name (e.g., apples)"
+          value="apples"
+        />
+      </div>
+
+      <div>
+        <button onclick="captureWeight()">Capture Weight</button>
+      </div>
+
+      <div class="status" id="status">
+        Enter farmer ID and produce name, then capture
+      </div>
+    </div>
+
+    <script>
+      let stream = null;
+
+      async function startCamera() {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const video = document.getElementById("video");
+          video.srcObject = stream;
+        } catch (error) {
+          updateStatus(`Camera error: ${error.message}`, "error");
+        }
+      }
+
+      function updateStatus(msg, type = "") {
+        const status = document.getElementById("status");
+        status.textContent = msg;
+        status.className = "status " + type;
+      }
+
+      async function captureWeight() {
+        const farmerId = document.getElementById("farmerId").value;
+        const produceName = document.getElementById("produceName").value;
+
+        if (!farmerId || !produceName) {
+          updateStatus("Please enter farmer ID and produce name", "error");
+          return;
+        }
+
+        updateStatus("Capturing image...");
+
+        // Capture frame
+        const video = document.getElementById("video");
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0);
+
+        // Convert to base64
+        const imageData = canvas.toDataURL("image/jpeg", 0.7);
+        const base64 = imageData.split(",")[1];
+
+        // Send to API
+        try {
+          const response = await fetch(
+            "http://localhost:8001/api/v1/capture/weight",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                farmer_id: farmerId,
+                produce_name: produceName,
+                image_base64: base64
+              })
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            updateStatus(`✅ ${data.message}`, "success");
+            console.log("Response:", data);
+          } else {
+            updateStatus(`❌ Error: ${data.error}`, "error");
+          }
+        } catch (error) {
+          updateStatus(`❌ Network error: ${error.message}`, "error");
+        }
+      }
+
+      // Start camera on page load
+      startCamera();
+    </script>
+  </body>
+</html>
