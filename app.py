@@ -508,17 +508,9 @@ async def test_weight_capture():
 
 if __name__ == "__main__":
     import uvicorn
-    import threading
 
     # Initialize Google Sheets service
     init_google_sheets()
-
-    # Initialize models in background thread to avoid blocking startup
-    def init_models_async():
-        initialize_models()
-
-    model_thread = threading.Thread(target=init_models_async, daemon=True)
-    model_thread.start()
 
     port = int(os.getenv("PORT", 8000))
     print("="*60)
@@ -526,7 +518,6 @@ if __name__ == "__main__":
     print("Connecting Family Farms with AI Technology")
     print("="*60)
     print(f"Starting server on http://0.0.0.0:{port}")
-    print("AI models are loading in the background...")
     print("\nAvailable Marketplace Services:")
     print(f"  http://0.0.0.0:{port}/test_weight_capture.html (Smart Weight Capture)")
     print(f"  http://0.0.0.0:{port}/webcam_client.html (Produce Detection)")

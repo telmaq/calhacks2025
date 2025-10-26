@@ -16,7 +16,7 @@
         color: #2c3e2c;
         min-height: 100vh;
         padding: 6px;
-        font-size: 11px;
+        font-size: 13px;
       }
 
       .header {
@@ -30,14 +30,14 @@
 
       .header h1 {
         color: #2c3e2c;
-        font-size: 1.1em;
+        font-size: 1.3em;
         margin-bottom: 2px;
         font-weight: 600;
       }
 
       .header .subtitle {
         color: #5a7c5a;
-        font-size: 0.7em;
+        font-size: 0.8em;
         font-weight: 300;
       }
 
@@ -62,10 +62,13 @@
       }
 
       video {
-        width: 100%;
+        width: 80%;
+        max-width: 400px;
         border-radius: 8px;
         border: 2px solid #a8d5a8;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        display: block;
+        margin: 0 auto;
       }
 
       .form-section {
@@ -85,7 +88,7 @@
         margin-bottom: 2px;
         color: #2c3e2c;
         font-weight: 500;
-        font-size: 0.7em;
+        font-size: 0.8em;
       }
 
       select,
@@ -97,7 +100,7 @@
         color: #2c3e2c;
         border: 1px solid #d4e6d4;
         border-radius: 5px;
-        font-size: 10px;
+        font-size: 12px;
         transition: all 0.3s ease;
       }
 
@@ -115,7 +118,7 @@
 
       button {
         padding: 8px 16px;
-        font-size: 11px;
+        font-size: 12px;
         margin: 4px;
         background: linear-gradient(135deg, #7fb069 0%, #6a9c5a 100%);
         color: white;
@@ -145,7 +148,7 @@
         background: #f8fdf8;
         border: 1px solid #d4e6d4;
         min-height: 24px;
-        font-size: 0.7em;
+        font-size: 0.8em;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -181,7 +184,7 @@
       @media (max-width: 768px) {
         body {
           padding: 4px;
-          font-size: 10px;
+          font-size: 12px;
         }
 
         #container {
@@ -190,14 +193,19 @@
         }
 
         .header h1 {
-          font-size: 1em;
+          font-size: 1.1em;
         }
 
         button {
           width: 100%;
           margin: 4px 0;
           padding: 6px 12px;
-          font-size: 10px;
+          font-size: 11px;
+        }
+
+        video {
+          width: 90%;
+          max-width: 350px;
         }
       }
     </style>
@@ -388,10 +396,20 @@
           const data = await response.json();
 
           if (response.ok) {
-            updateStatus(
-              `✅ Product saved: ${data.name} - ${data.price} ${data.unit}`,
-              "success"
-            );
+            if (data.name === "Unknown" || data.weight_data.weight <= 0) {
+              // Show Claude's description when detection fails
+              updateStatus(
+                `⚠️ Detection failed: ${
+                  data.description || "Unable to identify produce"
+                }`,
+                "error"
+              );
+            } else {
+              updateStatus(
+                `✅ Product saved: ${data.name} - ${data.price} ${data.unit}`,
+                "success"
+              );
+            }
             console.log("Response:", data);
 
             // Send data back to Creao (if opened from Creao)
