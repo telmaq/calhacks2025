@@ -20,8 +20,8 @@
 
       .header {
         text-align: center;
-        margin-bottom: 30px;
-        padding: 20px;
+        margin-bottom: 15px;
+        padding: 12px;
         background: rgba(255, 255, 255, 0.9);
         border-radius: 15px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -29,14 +29,14 @@
 
       .header h1 {
         color: #2c3e2c;
-        font-size: 2.2em;
-        margin-bottom: 10px;
+        font-size: 1.8em;
+        margin-bottom: 5px;
         font-weight: 600;
       }
 
       .header .subtitle {
         color: #5a7c5a;
-        font-size: 1.1em;
+        font-size: 1em;
         font-weight: 300;
       }
 
@@ -51,13 +51,13 @@
         margin: 0 auto;
         background: rgba(255, 255, 255, 0.95);
         border-radius: 20px;
-        padding: 30px;
+        padding: 20px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         backdrop-filter: blur(10px);
       }
 
       .camera-section {
-        margin-bottom: 25px;
+        margin-bottom: 15px;
         text-align: center;
       }
 
@@ -72,15 +72,15 @@
 
       .controls-section {
         background: #f8fdf8;
-        padding: 25px;
+        padding: 15px;
         border-radius: 15px;
-        margin: 20px 0;
+        margin: 15px 0;
         border: 2px solid #d4e6d4;
       }
 
       .button-group {
         text-align: center;
-        margin: 25px 0;
+        margin: 15px 0;
       }
 
       button {
@@ -115,13 +115,13 @@
       }
 
       .status {
-        padding: 20px;
-        margin: 20px 0;
+        padding: 12px;
+        margin: 15px 0;
         border-radius: 12px;
         background: #f8fdf8;
         border: 2px solid #d4e6d4;
-        min-height: 60px;
-        font-size: 1.1em;
+        min-height: 40px;
+        font-size: 1em;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -148,7 +148,7 @@
       }
 
       .server-input {
-        margin: 20px 0;
+        margin: 10px 0;
       }
 
       .server-input label {
@@ -177,16 +177,16 @@
       }
 
       #log {
-        max-height: 300px;
+        max-height: 200px;
         overflow-y: auto;
         background: #f8fdf8;
-        padding: 20px;
+        padding: 15px;
         border-radius: 12px;
-        font-size: 14px;
+        font-size: 13px;
         font-family: "Courier New", monospace;
         border: 2px solid #d4e6d4;
         color: #2c3e2c;
-        line-height: 1.5;
+        line-height: 1.4;
       }
 
       .log-entry {
@@ -201,8 +201,8 @@
 
       .farm-decoration {
         text-align: center;
-        margin: 20px 0;
-        font-size: 1.5em;
+        margin: 10px 0;
+        font-size: 1.2em;
         color: #7fb069;
       }
 
@@ -245,6 +245,10 @@
       </div>
 
       <div class="controls-section">
+        <div class="status" id="status">
+          Enter server URL and click Start Camera
+        </div>
+
         <div class="button-group">
           <button id="startBtn" onclick="start()">Start Camera</button>
           <button id="stopBtn" onclick="stop()" disabled>Stop</button>
@@ -283,8 +287,6 @@
           />
         </div>
       </div>
-
-      <div class="farm-decoration">FarmFresh Marketplace</div>
 
       <div class="status" id="status">
         Enter server URL and click Start Camera
