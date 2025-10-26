@@ -1,17 +1,22 @@
--- Supabase Produce Table Schema
+-- Supabase Product Table Schema
 
-CREATE TABLE produce (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    farmer_id TEXT NOT NULL,
-    produce_name TEXT NOT NULL,
-    weight DECIMAL(10, 2) NOT NULL,
-    unit TEXT NOT NULL,
-    weight_confidence DECIMAL(3, 2),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    creao_logged BOOLEAN DEFAULT FALSE
+CREATE TABLE Product (
+    id VARCHAR(255) PRIMARY KEY,
+    seller_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(255) NOT NULL,
+    price NUMERIC NOT NULL,
+    unit VARCHAR(50) NOT NULL,
+    stock_quantity INTEGER NOT NULL,
+    image_url VARCHAR(2048),
+    available BOOLEAN NOT NULL,
+    data_creator VARCHAR(255) NOT NULL,
+    data_updater VARCHAR(255) NOT NULL,
+    create_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    update_time TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 -- Add indexes for faster queries
-CREATE INDEX idx_produce_farmer_id ON produce(farmer_id);
-CREATE INDEX idx_produce_created_at ON produce(created_at DESC);
+CREATE INDEX idx_product_seller_id ON Product(seller_id);
+CREATE INDEX idx_product_create_time ON Product(create_time DESC);
