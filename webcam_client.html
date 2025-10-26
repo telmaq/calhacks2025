@@ -1,84 +1,270 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Webcam Client</title>
+    <title>FarmFresh Marketplace - Produce Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: Arial;
-        margin: 20px;
-        background: #000;
-        color: #fff;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f0f8f0 0%, #e8f5e8 100%);
+        color: #2c3e2c;
+        min-height: 100vh;
+        padding: 20px;
       }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        color: #2c3e2c;
+        font-size: 2.2em;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+
+      .header .subtitle {
+        color: #5a7c5a;
+        font-size: 1.1em;
+        font-weight: 300;
+      }
+
+      .farm-icon {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+        display: block;
+      }
+
       #container {
-        max-width: 800px;
+        max-width: 900px;
         margin: 0 auto;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
       }
-      #video {
+
+      .camera-section {
+        margin-bottom: 25px;
+        text-align: center;
+      }
+
+      #video,
+      #annotatedImage {
         width: 100%;
-        border: 2px solid #333;
+        max-width: 600px;
+        border-radius: 15px;
+        border: 3px solid #a8d5a8;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
       }
+
+      .controls-section {
+        background: #f8fdf8;
+        padding: 25px;
+        border-radius: 15px;
+        margin: 20px 0;
+        border: 2px solid #d4e6d4;
+      }
+
+      .button-group {
+        text-align: center;
+        margin: 25px 0;
+      }
+
       button {
-        padding: 15px 30px;
-        font-size: 16px;
-        margin: 10px 5px;
-        background: #007aff;
+        padding: 15px 35px;
+        font-size: 18px;
+        margin: 10px;
+        background: linear-gradient(135deg, #7fb069 0%, #6a9c5a 100%);
         color: white;
         border: none;
-        border-radius: 5px;
+        border-radius: 12px;
         cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(127, 176, 105, 0.3);
+        min-width: 180px;
       }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(127, 176, 105, 0.4);
+        background: linear-gradient(135deg, #6a9c5a 0%, #5a8c4a 100%);
+      }
+
+      button:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
       button:disabled {
-        background: #555;
+        background: linear-gradient(135deg, #ccc 0%, #bbb 100%);
         cursor: not-allowed;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
+
       .status {
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 5px;
-        background: #333;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 12px;
+        background: #f8fdf8;
+        border: 2px solid #d4e6d4;
+        min-height: 60px;
+        font-size: 1.1em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        transition: all 0.3s ease;
       }
+
+      .status.connected {
+        background: linear-gradient(135deg, #d4f0d4 0%, #c8e8c8 100%);
+        border-color: #7fb069;
+        color: #2c5a2c;
+      }
+
+      .status.error {
+        background: linear-gradient(135deg, #f8d4d4 0%, #f0c8c8 100%);
+        border-color: #d67b7b;
+        color: #5a2c2c;
+      }
+
+      .status.loading {
+        background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+        border-color: #ccc;
+        color: #666;
+      }
+
+      .server-input {
+        margin: 20px 0;
+      }
+
+      .server-input label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e2c;
+        font-weight: 500;
+        font-size: 1.1em;
+      }
+
+      input[type="text"] {
+        padding: 12px 15px;
+        width: 100%;
+        background: #ffffff;
+        color: #2c3e2c;
+        border: 2px solid #d4e6d4;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #7fb069;
+        box-shadow: 0 0 0 3px rgba(127, 176, 105, 0.2);
+      }
+
       #log {
-        max-height: 200px;
+        max-height: 300px;
         overflow-y: auto;
-        background: #222;
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        font-family: monospace;
+        background: #f8fdf8;
+        padding: 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-family: "Courier New", monospace;
+        border: 2px solid #d4e6d4;
+        color: #2c3e2c;
+        line-height: 1.5;
+      }
+
+      .log-entry {
+        margin-bottom: 8px;
+        padding: 5px 0;
+        border-bottom: 1px solid #d4e6d4;
+      }
+
+      .log-entry:last-child {
+        border-bottom: none;
+      }
+
+      .farm-decoration {
+        text-align: center;
+        margin: 20px 0;
+        font-size: 1.5em;
+        color: #7fb069;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+        }
+
+        #container {
+          padding: 20px;
+          margin: 10px;
+        }
+
+        .header h1 {
+          font-size: 1.8em;
+        }
+
+        button {
+          width: 100%;
+          margin: 10px 0;
+        }
+
+        #log {
+          max-height: 200px;
+          font-size: 12px;
+        }
       }
     </style>
   </head>
   <body>
+    <div class="header">
+      <h1>FarmFresh Marketplace</h1>
+      <p class="subtitle">AI-Powered Produce Detection</p>
+    </div>
+
     <div id="container">
-      <h1>📹 Produce Detection</h1>
-
-      <img
-        id="annotatedImage"
-        style="width: 100%; border: 2px solid #333; display: none"
-      />
-      <video id="video" autoplay></video>
-
-      <div>
-        <button id="startBtn" onclick="start()">Start Camera</button>
-        <button id="stopBtn" onclick="stop()" disabled>Stop</button>
+      <div class="camera-section">
+        <img id="annotatedImage" style="display: none" />
+        <video id="video" autoplay></video>
       </div>
 
-      <div class="status" id="status">Enter server URL and click Start</div>
+      <div class="controls-section">
+        <div class="button-group">
+          <button id="startBtn" onclick="start()">Start Camera</button>
+          <button id="stopBtn" onclick="stop()" disabled>Stop</button>
+        </div>
 
-      <div style="margin: 10px 0">
-        <input
-          type="text"
-          id="serverUrl"
-          value="ws://localhost:8001/ws/stream"
-          style="
-            width: 70%;
-            padding: 10px;
-            border: 1px solid #555;
-            background: #222;
-            color: #fff;
-            border-radius: 5px;
-          "
-        />
+        <div class="server-input">
+          <label for="serverUrl">Server URL</label>
+          <input
+            type="text"
+            id="serverUrl"
+            value="ws://localhost:8001/ws/stream"
+            placeholder="Enter WebSocket server URL"
+          />
+        </div>
+      </div>
+
+      <div class="farm-decoration">FarmFresh Marketplace</div>
+
+      <div class="status" id="status">
+        Enter server URL and click Start Camera
       </div>
 
       <div id="log"></div>
@@ -93,12 +279,27 @@
 
       function log(msg) {
         const logDiv = document.getElementById("log");
-        logDiv.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement("div");
+        logEntry.className = "log-entry";
+        logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${msg}`;
+        logDiv.appendChild(logEntry);
         logDiv.scrollTop = logDiv.scrollHeight;
       }
 
-      function updateStatus(msg) {
-        document.getElementById("status").textContent = msg;
+      function updateStatus(msg, type = "") {
+        const status = document.getElementById("status");
+        status.textContent = msg;
+        status.className = "status " + type;
+
+        // Add loading animation for certain messages
+        if (msg.includes("Connecting") || msg.includes("Starting")) {
+          status.className = "status loading";
+        } else if (msg.includes("Connected") || msg.includes("Streaming")) {
+          status.className = "status connected";
+        } else if (msg.includes("error") || msg.includes("Error")) {
+          status.className = "status error";
+        }
       }
 
       async function start() {

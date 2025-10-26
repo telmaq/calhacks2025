@@ -19,8 +19,8 @@ from supabase import create_client, Client
 load_dotenv()
 
 app = FastAPI(
-    title="Smart Camera Service - Creao Integration",
-    description="Computer vision service for capturing produce weight from scale images",
+    title="FarmFresh Marketplace - Smart Camera Service",
+    description="AI-powered computer vision service for family farms to capture produce weight and manage inventory",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -54,9 +54,9 @@ def init_supabase():
     global supabase
     if SUPABASE_URL and SUPABASE_KEY:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print("✅ Supabase client initialized")
+        print("Supabase client initialized")
     else:
-        print("⚠️  Supabase credentials not found")
+        print("Supabase credentials not found")
 
 # def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
 #     """Verify API key for authentication"""
@@ -101,33 +101,33 @@ model = None
 def initialize_models():
     """Initialize models at startup to avoid timeout issues"""
     global model
-    print("🔄 Initializing AI models...")
+    print("Initializing AI models...")
 
     try:
         print("  - Loading YOLOv8 model...")
         # Options: yolov8n.pt (nano), yolov8s.pt (small), yolov8m.pt (medium), yolov8l.pt (large)
         model = YOLO('yolov8m.pt')  # Medium model - best accuracy within 4GB limit
-        print("  ✅ YOLOv8 model loaded successfully")
+        print("  YOLOv8 model loaded successfully")
 
         print("  - Claude API ready...")
-        print("  ✅ Claude API configured successfully")
+        print("  Claude API configured successfully")
 
-        print("🎉 All models initialized successfully!")
+        print("All models initialized successfully!")
 
     except Exception as e:
-        print(f"❌ Error initializing models: {e}")
-        print("⚠️  Models will be loaded on first use")
+        print(f"Error initializing models: {e}")
+        print("Models will be loaded on first use")
         # Continue without models - they'll be loaded on first use
         model = None
 
 def get_model():
     global model
     if model is None:
-        print("⚠️  Model not initialized, loading now...")
+        print("Model not initialized, loading now...")
         model = YOLO('yolov8m.pt')  # Medium model
     return model
 
-async def write_to_supabase(data: dict) -> dict:
+async def write_to_supabase(data: dict) -> str:
     """Write product data to Supabase product table"""
     if not supabase:
         raise Exception("Supabase client not initialized")
@@ -142,11 +142,11 @@ async def write_to_supabase(data: dict) -> dict:
         # Map the fields to match the product table
         record = {
             "id": product_id,
-            "seller_id": data["farmer_id"],  # farmer_id maps to seller_id
+            "seller_id": data["farmer_id"],
             "name": data["produce_name"],
             "description": f"Captured produce: {data['produce_name']}",
             "category": "Produce",
-            "price": data["weight"],  # Weight becomes price (can be adjusted)
+            "price": data["weight"],
             "unit": data["unit"],
             "stock_quantity": 1,
             "image_url": None,
@@ -159,14 +159,11 @@ async def write_to_supabase(data: dict) -> dict:
 
         result = supabase.table("product").insert(record).execute()
 
-        return {
-            "success": True,
-            "id": result.data[0]["id"],
-            "record": result.data[0]
-        }
+        # Return just the ID
+        return product_id
 
     except Exception as e:
-        print(f"❌ Error writing to Supabase: {e}")
+        print(f"Error writing to Supabase: {e}")
         raise
 
 async def extract_weight_from_scale(frame: np.ndarray) -> dict:
@@ -174,7 +171,7 @@ async def extract_weight_from_scale(frame: np.ndarray) -> dict:
     Extract weight from digital scale display using Claude API.
     """
     if not claude_client:
-        print("❌ Claude API key not configured. Set CLAUDE_API_KEY environment variable.")
+        print("Claude API key not configured. Set CLAUDE_API_KEY environment variable.")
         return {
             'weight': 0.0,
             'unit': 'g',
@@ -259,8 +256,18 @@ Focus on the digital display area and ignore any other text or numbers in the im
                 return {
                     'weight': weight,
                     'unit': unit,
+                    # 'description': f"Captured produce. {description_text}",
+                    'category': 'Produce',
+                    'price': weight,
+                    'stock_quantity': 1,
+                    'image_url': None,
+                    'available': True,
+                    # 'data_creator': data['farmer_id'],
+                    # 'data_updater': data['farmer_id'],
+                    # 'create_time': datetime.now().isoformat(),
+                    # 'update_time': datetime.now().isoformat(),
                     'confidence': confidence,
-                    'raw_text': f"{weight} {unit}",
+                    # 'raw_text': f"{weight} {unit}",
                     'method': 'claude_api'
                 }
             else:
@@ -268,7 +275,7 @@ Focus on the digital display area and ignore any other text or numbers in the im
                 print(f"   Missing required fields: weight={weight_data.get('weight')}, unit={weight_data.get('unit')}, confidence={weight_data.get('confidence')}")
 
         except (json.JSONDecodeError, ValueError, KeyError) as e:
-            print(f"❌ Error parsing Claude response: {e}")
+            print(f"Error parsing Claude response: {e}")
             print(f"   Response: {content}")
 
     except Exception as e:
@@ -376,11 +383,11 @@ async def capture_weight(
             elif request.image_url:
                 # Process image URL
                 image_url = request.image_url.strip()
-                print(f"📥 Fetching image from URL: {image_url}")
+                print(f"Fetching image from URL: {image_url}")
                 response = requests.get(image_url, timeout=30)
                 response.raise_for_status()  # Raise exception for bad status codes
                 image_data = response.content
-                print(f"✅ Successfully fetched image ({len(image_data)} bytes)")
+                print(f"Successfully fetched image ({len(image_data)} bytes)")
 
         except requests.RequestException as e:
             return JSONResponse(
@@ -412,35 +419,28 @@ async def capture_weight(
             )
 
         # Write to Supabase
-        supabase_id = None
+        product_id = None
         try:
             if supabase:
-                supabase_result = await write_to_supabase({
+                product_id = await write_to_supabase({
                     'farmer_id': request.farmer_id,
                     'produce_name': request.produce_name,
                     'weight': weight_data['weight'],
-                    'unit': weight_data['unit'],
-                    'confidence': weight_data['confidence']
+                    'unit': weight_data['unit']
                 })
-                supabase_id = supabase_result['id']
-                print(f"✅ Saved to Supabase: {supabase_id}")
+                print(f"Saved to Supabase: {product_id}")
             else:
                 print("⚠️  Supabase not initialized, skipping database write")
         except Exception as e:
             print(f"❌ Failed to write to Supabase: {e}")
 
+        # Return only essential data
         return JSONResponse(content={
-            "status": "success",
-            "farmer_id": request.farmer_id,
-            "produce": {
-                "name": request.produce_name,
-                "weight": weight_data['weight'],
-                "unit": weight_data['unit'],
-                "confidence": weight_data['confidence']
-            },
-            "supabase_id": supabase_id,
-            "message": f"Produce captured and logged to database",
-            "synced_to_creao": False
+            "id": product_id,
+            "seller_id": request.farmer_id,
+            "name": request.produce_name,
+            "price": weight_data['weight'],
+            "unit": weight_data['unit']
         })
 
     except Exception as e:
@@ -484,16 +484,19 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get("/",
          summary="API Status",
-         description="Get the current status of the Smart Camera Service API",
+         description="Get the current status of the FarmFresh Marketplace Smart Camera Service",
          tags=["Health"])
 async def root():
     """Get API status and version information"""
     return {
-        "status": "Smart Camera Service API",
+        "status": "FarmFresh Marketplace - Smart Camera Service",
         "version": "1.0.0",
-        "description": "Computer vision service for capturing produce weight from scale images",
+        "description": "AI-powered computer vision service for family farms to capture produce weight and manage inventory",
+        "marketplace": "FarmFresh - Connecting Family Farms with Smart Technology",
         "endpoints": {
             "weight_capture": "/api/v1/capture/weight",
+            "produce_detection": "/webcam_client.html",
+            "weight_test": "/test_weight_capture.html",
             "docs": "/docs",
             "health": "/health"
         }
@@ -542,11 +545,17 @@ if __name__ == "__main__":
     model_thread.start()
 
     port = int(os.getenv("PORT", 8000))
+    print("="*60)
+    print("FarmFresh Marketplace - Smart Camera Service")
+    print("Connecting Family Farms with AI Technology")
+    print("="*60)
     print(f"Starting server on http://0.0.0.0:{port}")
-    print("🔄 Models are loading in the background...")
-    print("\nAvailable endpoints:")
-    print(f"  - http://0.0.0.0:{port}/webcam_client.html (Produce detection demo)")
-    print(f"  - http://0.0.0.0:{port}/test_weight_capture.html (Weight capture test)")
-    print(f"  - POST http://0.0.0.0:{port}/api/v1/capture/weight (API endpoint)")
-    print(f"  - WebSocket ws://0.0.0.0:{port}/ws/stream (Real-time detection)")
+    print("AI models are loading in the background...")
+    print("\nAvailable Marketplace Services:")
+    print(f"  http://0.0.0.0:{port}/test_weight_capture.html (Smart Weight Capture)")
+    print(f"  http://0.0.0.0:{port}/webcam_client.html (Produce Detection)")
+    print(f"  POST http://0.0.0.0:{port}/api/v1/capture/weight (API endpoint)")
+    print(f"  WebSocket ws://0.0.0.0:{port}/ws/stream (Real-time detection)")
+    print(f"  http://0.0.0.0:{port}/docs (API Documentation)")
+    print("="*60)
     uvicorn.run(app, host="0.0.0.0", port=port)

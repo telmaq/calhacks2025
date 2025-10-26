@@ -1,97 +1,251 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Weight Capture Test</title>
+    <title>FarmFresh Marketplace - Weight Capture</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: Arial;
-        margin: 20px;
-        background: #000;
-        color: #fff;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f0f8f0 0%, #e8f5e8 100%);
+        color: #2c3e2c;
+        min-height: 100vh;
+        padding: 20px;
       }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        color: #2c3e2c;
+        font-size: 2.2em;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+
+      .header .subtitle {
+        color: #5a7c5a;
+        font-size: 1.1em;
+        font-weight: 300;
+      }
+
+      .farm-icon {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+        display: block;
+      }
+
       #container {
-        max-width: 600px;
+        max-width: 700px;
         margin: 0 auto;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
       }
+
+      .camera-section {
+        margin-bottom: 25px;
+      }
+
       video {
         width: 100%;
-        border: 2px solid #333;
+        border-radius: 15px;
+        border: 3px solid #a8d5a8;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
       }
-      button {
-        padding: 15px 30px;
+
+      .form-section {
+        background: #f8fdf8;
+        padding: 25px;
+        border-radius: 15px;
+        margin: 20px 0;
+        border: 2px solid #d4e6d4;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #2c3e2c;
+        font-weight: 500;
+        font-size: 1.1em;
+      }
+
+      select,
+      input {
+        padding: 12px 15px;
+        margin: 0;
+        width: 100%;
+        background: #ffffff;
+        color: #2c3e2c;
+        border: 2px solid #d4e6d4;
+        border-radius: 10px;
         font-size: 16px;
-        margin: 10px 5px;
-        background: #007aff;
+        transition: all 0.3s ease;
+      }
+
+      select:focus,
+      input:focus {
+        outline: none;
+        border-color: #7fb069;
+        box-shadow: 0 0 0 3px rgba(127, 176, 105, 0.2);
+      }
+
+      .button-group {
+        text-align: center;
+        margin: 25px 0;
+      }
+
+      button {
+        padding: 15px 35px;
+        font-size: 18px;
+        margin: 10px;
+        background: linear-gradient(135deg, #7fb069 0%, #6a9c5a 100%);
         color: white;
         border: none;
-        border-radius: 5px;
+        border-radius: 12px;
         cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(127, 176, 105, 0.3);
+        min-width: 180px;
       }
-      input {
-        padding: 10px;
-        margin: 10px 0;
-        width: 100%;
-        background: #222;
-        color: #fff;
-        border: 1px solid #555;
-        border-radius: 5px;
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(127, 176, 105, 0.4);
+        background: linear-gradient(135deg, #6a9c5a 0%, #5a8c4a 100%);
       }
+
+      button:active {
+        transform: translateY(0);
+      }
+
       .status {
-        padding: 15px;
-        margin: 10px 0;
-        border-radius: 5px;
-        background: #333;
-        min-height: 50px;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 12px;
+        background: #f8fdf8;
+        border: 2px solid #d4e6d4;
+        min-height: 60px;
+        font-size: 1.1em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        transition: all 0.3s ease;
       }
+
       .success {
-        background: #0a3;
+        background: linear-gradient(135deg, #d4f0d4 0%, #c8e8c8 100%);
+        border-color: #7fb069;
+        color: #2c5a2c;
       }
+
       .error {
-        background: #a30;
+        background: linear-gradient(135deg, #f8d4d4 0%, #f0c8c8 100%);
+        border-color: #d67b7b;
+        color: #5a2c2c;
+      }
+
+      .loading {
+        background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+        border-color: #ccc;
+        color: #666;
+      }
+
+      .farm-decoration {
+        text-align: center;
+        margin: 20px 0;
+        font-size: 1.5em;
+        color: #7fb069;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+        }
+
+        #container {
+          padding: 20px;
+          margin: 10px;
+        }
+
+        .header h1 {
+          font-size: 1.8em;
+        }
+
+        button {
+          width: 100%;
+          margin: 10px 0;
+        }
       }
     </style>
   </head>
   <body>
+    <div class="header">
+      <h1>FarmFresh Marketplace</h1>
+      <p class="subtitle">Smart Weight Capture for Family Farms</p>
+    </div>
+
     <div id="container">
-      <h1>📸 Weight Capture Test</h1>
-
-      <video id="video" autoplay></video>
-
-      <div>
-        <select
-          id="cameraSelect"
-          style="
-            padding: 10px;
-            margin: 10px 0;
-            width: 100%;
-            background: #222;
-            color: #fff;
-            border: 1px solid #555;
-            border-radius: 5px;
-          "
-        >
-          <option value="">Select Camera...</option>
-        </select>
-        <input
-          type="text"
-          id="farmerId"
-          placeholder="Farmer ID (e.g., farmer123)"
-          value="farmerxxx"
-        />
-        <input
-          type="text"
-          id="produceName"
-          placeholder="Produce Name (e.g., apples)"
-          value="xxx"
-        />
+      <div class="camera-section">
+        <video id="video" autoplay></video>
       </div>
 
-      <div>
+      <div class="form-section">
+        <div class="form-group">
+          <label for="cameraSelect">Select Camera</label>
+          <select id="cameraSelect">
+            <option value="">Choose your camera...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="farmerId">Farmer ID</label>
+          <input
+            type="text"
+            id="farmerId"
+            placeholder="Enter your farmer ID (e.g., farmer123)"
+            value="farmerxxx"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="produceName">Produce Name</label>
+          <input
+            type="text"
+            id="produceName"
+            placeholder="What are you weighing? (e.g., organic tomatoes)"
+            value="xxx"
+          />
+        </div>
+      </div>
+
+      <div class="button-group">
         <button onclick="captureWeight()">Capture Weight</button>
       </div>
 
+      <div class="farm-decoration">FarmFresh Marketplace</div>
+
       <div class="status" id="status">
-        Enter farmer ID and produce name, then capture
+        Enter your farmer ID and produce name, then capture the weight
       </div>
     </div>
 
@@ -173,6 +327,11 @@
         const status = document.getElementById("status");
         status.textContent = msg;
         status.className = "status " + type;
+
+        // Add loading animation for certain messages
+        if (msg.includes("Capturing") || msg.includes("Requesting")) {
+          status.className = "status loading";
+        }
       }
 
       async function captureWeight() {
@@ -218,7 +377,10 @@
           const data = await response.json();
 
           if (response.ok) {
-            updateStatus(`✅ ${data.message}`, "success");
+            updateStatus(
+              `✅ Product saved: ${data.name} - ${data.price} ${data.unit}`,
+              "success"
+            );
             console.log("Response:", data);
 
             // Send data back to Creao (if opened from Creao)

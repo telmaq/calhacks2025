@@ -53,12 +53,11 @@ async function syncToCreaoDatabase(data) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: data.produce.name,
-        weight: data.produce.weight,
-        unit: data.produce.unit,
-        farmer_id: data.farmer_id,
-        external_id: data.supabase_id,
-        confidence: data.produce.confidence
+        name: data.name,
+        price: data.price,
+        unit: data.unit,
+        seller_id: data.seller_id,
+        external_id: data.id
       })
     });
 
@@ -161,17 +160,16 @@ Create this endpoint in your Creao backend:
 ```javascript
 // POST /api/produce
 app.post("/api/produce", async (req, res) => {
-  const { name, weight, unit, farmer_id, external_id, confidence } = req.body;
+  const { name, price, unit, seller_id, external_id } = req.body;
 
   // Save to Creao database
   const produce = await db.produce.create({
     data: {
       name,
-      weight,
+      price,
       unit,
-      farmer_id,
+      seller_id,
       external_id, // Reference to Supabase record
-      confidence,
       status: "pending",
       created_at: new Date()
     }
