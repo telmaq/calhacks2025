@@ -248,6 +248,9 @@
         <div class="button-group">
           <button id="startBtn" onclick="start()">Start Camera</button>
           <button id="stopBtn" onclick="stop()" disabled>Stop</button>
+          <button id="captureBtn" onclick="captureProduce()" disabled>
+            Capture Produce
+          </button>
         </div>
 
         <div class="server-input">
@@ -255,8 +258,28 @@
           <input
             type="text"
             id="serverUrl"
-            value="ws://localhost:8001/ws/stream"
+            value="ws://localhost:8000/ws/stream"
             placeholder="Enter WebSocket server URL"
+          />
+        </div>
+
+        <div class="server-input">
+          <label for="farmerId">Farmer ID</label>
+          <input
+            type="text"
+            id="farmerId"
+            placeholder="Farmer ID (from URL parameter)"
+            readonly
+          />
+        </div>
+
+        <div class="server-input">
+          <label for="produceName">Produce Name</label>
+          <input
+            type="text"
+            id="produceName"
+            placeholder="Detected produce name will appear here"
+            readonly
           />
         </div>
       </div>
@@ -276,6 +299,31 @@
       let canvas = document.createElement("canvas");
       let ctx = canvas.getContext("2d");
       let interval = null;
+      let detectedProduce = null;
+      let currentFrame = null;
+
+      // Get URL parameters
+      function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+      }
+
+      // Initialize farmer ID from URL parameter
+      function initializeFarmerId() {
+        const farmerId =
+          getUrlParameter("farmer_id") || getUrlParameter("farmerid");
+        if (farmerId) {
+          document.getElementById("farmerId").value = farmerId;
+          log(`Farmer ID loaded from URL: ${farmerId}`);
+        } else {
+          log("No farmer ID found in URL parameters");
+        }
+      }
+
+      // Initialize on page load
+      window.onload = function () {
+        initializeFarmerId();
+      };
 
       function log(msg) {
         const logDiv = document.getElementById("log");
@@ -333,16 +381,21 @@
                 `Produce detected: ${data.detection.objects_detected} items - ${objectNames}`
               );
 
-              // Log detailed detection info
+              // Store detected produce for capture
               if (objects.length > 0) {
-                objects.forEach((obj) => {
-                  log(
-                    `${obj.class}: ${(obj.confidence * 100).toFixed(
-                      1
-                    )}% confidence`
-                  );
-                });
+                detectedProduce = objects[0]; // Use the first detected object
+                document.getElementById("captureBtn").disabled = false;
+                log(`Ready to capture: ${detectedProduce.class}`);
               }
+
+              // Log detailed detection info
+              objects.forEach((obj) => {
+                log(
+                  `${obj.class}: ${(obj.confidence * 100).toFixed(
+                    1
+                  )}% confidence`
+                );
+              });
             }
             if (data.annotated_frame) {
               // Display annotated frame with produce contours
@@ -425,6 +478,7 @@
               const reader = new FileReader();
               reader.onloadend = () => {
                 const base64 = reader.result.split(",")[1];
+                currentFrame = base64; // Store current frame for capture
                 ws.send(
                   JSON.stringify({
                     type: "frame",
@@ -438,6 +492,66 @@
             "image/jpeg",
             0.7
           );
+        }
+      }
+
+      async function captureProduce() {
+        const farmerId = document.getElementById("farmerId").value;
+        const produceName = detectedProduce
+          ? detectedProduce.class
+          : "Unknown Produce";
+
+        if (!farmerId) {
+          log("Error: Farmer ID is required");
+          updateStatus("Error: Farmer ID is required");
+          return;
+        }
+
+        if (!currentFrame) {
+          log("Error: No frame available for capture");
+          updateStatus("Error: No frame available");
+          return;
+        }
+
+        try {
+          updateStatus("Capturing produce...");
+          log(`Capturing: ${produceName} for farmer ${farmerId}`);
+
+          const response = await fetch("/api/v1/capture/weight", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              farmer_id: farmerId,
+              produce_name: produceName,
+              image_base64: currentFrame
+            })
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            log(
+              `✅ Successfully captured: ${result.name} (${result.price} ${result.unit})`
+            );
+            updateStatus(
+              `Captured: ${result.name} - ${result.price} ${result.unit}`
+            );
+
+            // Update produce name field
+            document.getElementById("produceName").value = result.name;
+
+            // Reset for next capture
+            detectedProduce = null;
+            document.getElementById("captureBtn").disabled = true;
+          } else {
+            log(`❌ Error: ${result.error}`);
+            updateStatus(`Error: ${result.error}`);
+          }
+        } catch (error) {
+          log(`❌ Capture error: ${error.message}`);
+          updateStatus(`Error: ${error.message}`);
         }
       }
 

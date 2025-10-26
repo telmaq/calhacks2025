@@ -15,7 +15,10 @@ import re
 import os
 from dotenv import load_dotenv
 import anthropic
-from supabase import create_client, Client
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+import uuid
+from datetime import datetime
 load_dotenv()
 
 app = FastAPI(
@@ -44,19 +47,83 @@ CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 # Initialize Claude client
 claude_client = anthropic.Anthropic(api_key=CLAUDE_API_KEY) if CLAUDE_API_KEY else None
 
-# Supabase configuration
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = None
 
-def init_supabase():
-    """Initialize Supabase client"""
-    global supabase
-    if SUPABASE_URL and SUPABASE_KEY:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print("Supabase client initialized")
+# Google Sheets configuration
+GOOGLE_SHEETS_CREDENTIALS_FILE = os.getenv("GOOGLE_SHEETS_CREDENTIALS_FILE")
+GOOGLE_SHEETS_ID = os.getenv("GOOGLE_SHEETS_ID")
+sheets_service = None
+
+
+def init_google_sheets():
+    """Initialize Google Sheets service"""
+    global sheets_service
+    if GOOGLE_SHEETS_CREDENTIALS_FILE and GOOGLE_SHEETS_ID:
+        try:
+            # Define the scopes
+            SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
+            # Load credentials from file
+            creds = Credentials.from_service_account_file(
+                GOOGLE_SHEETS_CREDENTIALS_FILE, scopes=SCOPES)
+
+            # Build the service
+            sheets_service = build('sheets', 'v4', credentials=creds)
+            print("Google Sheets service initialized")
+        except Exception as e:
+            print(f"Error initializing Google Sheets: {e}")
+            sheets_service = None
     else:
-        print("Supabase credentials not found")
+        print("Google Sheets credentials not found")
+
+async def write_to_google_sheets(data: dict) -> str:
+    """Write product data to Google Sheets"""
+    if not sheets_service:
+        raise Exception("Google Sheets service not initialized")
+
+    try:
+        # Generate UUID for product ID
+        product_id = str(uuid.uuid4())
+
+        # Get current timestamp
+        current_time = int(datetime.now().timestamp())
+
+        # Prepare the row data according to the Google Sheets format
+        row_data = [
+            product_id,                    # ID
+            data["farmer_id"],            # Seller ID
+            data["produce_name"],         # Name
+            f"Captured produce: {data['produce_name']}",  # Description
+            "vegetables",                 # Category (default to vegetables)
+            data["weight"],               # Price (using weight as price)
+            data["unit"],                 # Unit
+            1,                            # Stock
+            "null",                       # Image URL
+            "TRUE",                       # Available
+            data["farmer_id"],            # Creator
+            data["farmer_id"],            # Updater
+            current_time,                 # Created timestamp
+            current_time                  # Updated timestamp
+        ]
+
+        # Append the row to the sheet using a simpler approach
+        range_name = 'Products'  # Just use the sheet name
+        body = {
+            'values': [row_data]
+        }
+
+        result = sheets_service.spreadsheets().values().append(
+            spreadsheetId=GOOGLE_SHEETS_ID,
+            range=range_name,
+            valueInputOption='RAW',
+            body=body
+        ).execute()
+
+        print(f"Successfully wrote to Google Sheets: {product_id}")
+        return product_id
+
+    except Exception as e:
+        print(f"Error writing to Google Sheets: {e}")
+        raise
 
 # def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
 #     """Verify API key for authentication"""
@@ -127,44 +194,7 @@ def get_model():
         model = YOLO('yolov8m.pt')  # Medium model
     return model
 
-async def write_to_supabase(data: dict) -> str:
-    """Write product data to Supabase product table"""
-    if not supabase:
-        raise Exception("Supabase client not initialized")
 
-    try:
-        import uuid
-        from datetime import datetime
-
-        # Generate UUID for product ID
-        product_id = str(uuid.uuid4())
-
-        # Map the fields to match the product table
-        record = {
-            "id": product_id,
-            "seller_id": data["farmer_id"],
-            "name": data["produce_name"],
-            "description": f"Captured produce: {data['produce_name']}",
-            "category": "Produce",
-            "price": data["weight"],
-            "unit": data["unit"],
-            "stock_quantity": 1,
-            "image_url": None,
-            "available": True,
-            "data_creator": data["farmer_id"],
-            "data_updater": data["farmer_id"],
-            "create_time": datetime.now().isoformat(),
-            "update_time": datetime.now().isoformat()
-        }
-
-        result = supabase.table("product").insert(record).execute()
-
-        # Return just the ID
-        return product_id
-
-    except Exception as e:
-        print(f"Error writing to Supabase: {e}")
-        raise
 
 async def extract_weight_from_scale(frame: np.ndarray) -> dict:
     """
@@ -418,24 +448,36 @@ async def capture_weight(
                 content={"error": "Invalid weight value", "weight": weight_data['weight']}
             )
 
-        # Write to Supabase
+        # Write to Google Sheets
         product_id = None
         try:
-            if supabase:
-                product_id = await write_to_supabase({
+            if sheets_service:
+                product_id = await write_to_google_sheets({
                     'farmer_id': request.farmer_id,
                     'produce_name': request.produce_name,
                     'weight': weight_data['weight'],
                     'unit': weight_data['unit']
                 })
-                print(f"Saved to Supabase: {product_id}")
+                print(f"✅ Saved to Google Sheets: {product_id}")
             else:
-                print("⚠️  Supabase not initialized, skipping database write")
+                print("⚠️  Google Sheets not initialized, skipping database write")
         except Exception as e:
-            print(f"❌ Failed to write to Supabase: {e}")
+            print(f"❌ Failed to write to Google Sheets: {e}")
 
-        # Return only essential data
+        # Return data in Creao-compatible format
         return JSONResponse(content={
+            "status": "success",
+            "farmer_id": request.farmer_id,
+            "produce_name": request.produce_name,
+            "weight_data": {
+                "weight": weight_data['weight'],
+                "unit": weight_data['unit'],
+                "confidence": weight_data.get('confidence', 0.95),
+                "raw_text": f"{weight_data['weight']} {weight_data['unit']}",
+                "method": weight_data.get('method', 'claude_api')
+            },
+            "message": f"Weight {weight_data['weight']} {weight_data['unit']} captured!",
+            "creao_logged": False,
             "id": product_id,
             "seller_id": request.farmer_id,
             "name": request.produce_name,
@@ -534,8 +576,8 @@ if __name__ == "__main__":
     import uvicorn
     import threading
 
-    # Initialize Supabase on startup
-    init_supabase()
+    # Initialize Google Sheets service
+    init_google_sheets()
 
     # Initialize models in background thread to avoid blocking startup
     def init_models_async():
