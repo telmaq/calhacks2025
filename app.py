@@ -9,6 +9,7 @@ import base64
 from typing import List, Optional
 from ultralytics import YOLO
 import httpx
+import requests
 from pydantic import BaseModel
 import re
 import os
@@ -53,6 +54,7 @@ class WeightCaptureRequest(BaseModel):
     farmer_id: str
     produce_name: str
     image_base64: Optional[str] = None
+    image_url: Optional[str] = None
 
 class ConnectionManager:
     def __init__(self):
@@ -292,6 +294,8 @@ async def capture_weight(
     print(f"   - farmer_id: {request.farmer_id}")
     print(f"   - produce_name: {request.produce_name}")
     print(f"   - image_base64 length: {len(request.image_base64) if request.image_base64 else 0}")
+    print(f"   - image_url: {request.image_url}")
+    print(f"   - using: {'base64' if request.image_base64 else 'URL' if request.image_url else 'neither'}")
     # print(f"   - API key: {api_key[:10]}...")
     """
     Capture weight from a scale image using Claude AI vision.
@@ -305,12 +309,21 @@ async def capture_weight(
 
     **Authentication:** Bearer token required
 
-    **Example Request:**
+    **Example Request (with base64):**
     ```json
     {
         "farmer_id": "farmer123",
         "produce_name": "apples",
         "image_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ..."
+    }
+    ```
+
+    **Example Request (with URL):**
+    ```json
+    {
+        "farmer_id": "farmer123",
+        "produce_name": "apples",
+        "image_url": "https://example.com/image.jpg"
     }
     ```
 
@@ -333,26 +346,41 @@ async def capture_weight(
     ```
     """
     try:
-        # Decode base64 image
-        if not request.image_base64:
+        # Process image from either base64 or URL
+        if not request.image_base64 and not request.image_url:
             return JSONResponse(
                 status_code=400,
-                content={"error": "image_base64 is required"}
+                content={"error": "image_base64 or image_url is required"}
             )
 
-        # Fix base64 padding if needed and decode
         try:
-            image_base64 = request.image_base64.strip()
-            # Add padding if needed
-            padding = len(image_base64) % 4
-            if padding:
-                image_base64 += '=' * (4 - padding)
+            if request.image_base64:
+                # Process base64 image
+                image_base64 = request.image_base64.strip()
+                # Add padding if needed
+                padding = len(image_base64) % 4
+                if padding:
+                    image_base64 += '=' * (4 - padding)
+                image_data = base64.b64decode(image_base64)
 
-            image_data = base64.b64decode(image_base64)
+            elif request.image_url:
+                # Process image URL
+                image_url = request.image_url.strip()
+                print(f"📥 Fetching image from URL: {image_url}")
+                response = requests.get(image_url, timeout=30)
+                response.raise_for_status()  # Raise exception for bad status codes
+                image_data = response.content
+                print(f"✅ Successfully fetched image ({len(image_data)} bytes)")
+
+        except requests.RequestException as e:
+            return JSONResponse(
+                status_code=400,
+                content={"error": f"Failed to fetch image from URL: {str(e)}"}
+            )
         except Exception as decode_error:
             return JSONResponse(
                 status_code=400,
-                content={"error": f"Invalid base64 encoding: {str(decode_error)}"}
+                content={"error": f"Invalid image data: {str(decode_error)}"}
             )
         nparr = np.frombuffer(image_data, np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)

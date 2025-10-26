@@ -104,7 +104,7 @@
           // Request permission first to get device labels
           updateStatus("Requesting camera access...", "");
           await navigator.mediaDevices.getUserMedia({ video: true });
-          
+
           // Now enumerate devices (they'll have labels now)
           devices = await navigator.mediaDevices.enumerateDevices();
           const videoDevices = devices.filter(
@@ -137,9 +137,10 @@
           }
         } catch (error) {
           console.error("Error loading cameras:", error);
-          const errorMsg = error.name === 'NotAllowedError'
-            ? 'Camera permission denied. Please click "Allow" when prompted.'
-            : `Error: ${error.message}`;
+          const errorMsg =
+            error.name === "NotAllowedError"
+              ? 'Camera permission denied. Please click "Allow" when prompted.'
+              : `Error: ${error.message}`;
           updateStatus(errorMsg, "error");
         }
       }
@@ -160,9 +161,10 @@
           updateStatus("Camera connected", "success");
         } catch (error) {
           console.error("Camera error:", error);
-          const errorMsg = error.name === 'NotAllowedError' 
-            ? 'Camera permission denied. Please allow camera access and refresh.'
-            : `Camera error: ${error.message}`;
+          const errorMsg =
+            error.name === "NotAllowedError"
+              ? "Camera permission denied. Please allow camera access and refresh."
+              : `Camera error: ${error.message}`;
           updateStatus(errorMsg, "error");
         }
       }
@@ -200,7 +202,7 @@
         try {
           // Use current origin (works for localhost and Railway)
           const apiUrl = `${window.location.origin}/api/v1/capture/weight`;
-          
+
           const response = await fetch(apiUrl, {
             method: "POST",
             headers: {

@@ -19,6 +19,26 @@ def test_health():
     print(f"Response: {response.json()}")
     print()
 
+def test_weight_capture_url(image_url):
+    """Test weight capture with an image URL"""
+    print(f"🌐 Testing weight capture with URL: {image_url}...")
+
+    # Make request with URL
+    payload = {
+        "farmer_id": "test_farmer_002",
+        "produce_name": "oranges",
+        "image_url": image_url
+    }
+
+    response = requests.post(
+        f"{API_URL}/api/v1/capture/weight",
+        json=payload
+    )
+
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    print()
+
 def test_weight_capture(image_path):
     """Test weight capture with an image"""
     print(f"📸 Testing weight capture with {image_path}...")
@@ -50,14 +70,24 @@ if __name__ == "__main__":
     # Test health
     test_health()
 
-    # Test with an image if provided
-    image_path = input("Enter path to test image (or press Enter to skip): ").strip()
+    # Test with an image URL if provided
+    image_url = input("Enter image URL to test (or press Enter to skip): ").strip()
+    if image_url:
+        test_weight_capture_url(image_url)
+    else:
+        print("Skipping URL test (no URL provided)")
+        print()
+
+    # Test with a local image if provided
+    image_path = input("Enter path to local test image (or press Enter to skip): ").strip()
     if image_path and Path(image_path).exists():
         test_weight_capture(image_path)
     else:
-        print("Skipping image test (no valid image provided)")
+        print("Skipping local image test (no valid image provided)")
         print()
-        print("To test with an image:")
+        print("To test with images:")
         print(f"  python test_api.py")
         print()
-        print("Example: python test_api.py path/to/scale_image.jpg")
+        print("Examples:")
+        print("  - URL: https://example.com/scale_image.jpg")
+        print("  - Local: path/to/scale_image.jpg")

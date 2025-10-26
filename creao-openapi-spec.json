@@ -7,8 +7,8 @@
   },
   "servers": [
     {
-      "url": "https://bonita-overtame-maryam.ngrok-free.dev",
-      "description": "ngrok tunnel to local server"
+      "url": "https://calhacks2025-production.up.railway.app",
+      "description": "Production server"
     }
   ],
   "security": [
@@ -20,7 +20,7 @@
     "/api/v1/capture/weight": {
       "post": {
         "summary": "Capture weight from a digital scale image",
-        "description": "Receives a base64 image of a scale, extracts the weight using OCR, and returns structured weight data.",
+        "description": "Receives either a base64 image or image URL of a scale, extracts the weight using Claude AI vision, and returns structured weight data. For webapp integration, use image_url instead of image_base64.",
         "security": [
           {
             "BearerAuth": []
@@ -32,7 +32,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["farmer_id", "produce_name", "image_base64"],
+                "required": ["farmer_id", "produce_name"],
                 "properties": {
                   "farmer_id": {
                     "type": "string",
@@ -47,8 +47,14 @@
                   "image_base64": {
                     "type": "string",
                     "format": "base64",
-                    "description": "Base64-encoded image of the scale display",
+                    "description": "Base64-encoded image of the scale display (alternative to image_url)",
                     "example": "iVBORw0KGgoAAAANSUhEUgAA..."
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL to the image of the scale display (preferred for webapp integration)",
+                    "example": "https://storage.example.com/images/scale_photo_123.jpg"
                   }
                 }
               }
@@ -90,18 +96,18 @@
                         },
                         "confidence": {
                           "type": "number",
-                          "description": "OCR confidence score (0-1)",
+                          "description": "Claude AI confidence score (0-1)",
                           "example": 0.95
                         },
                         "raw_text": {
                           "type": "string",
-                          "description": "Raw text extracted by OCR",
+                          "description": "Raw text extracted by Claude AI",
                           "example": "2.5 kg"
                         },
                         "method": {
                           "type": "string",
                           "description": "Method used for extraction",
-                          "example": "ocr"
+                          "example": "claude_api"
                         }
                       }
                     },
@@ -152,12 +158,7 @@
                     "error": {
                       "type": "string",
                       "description": "Error message",
-                      "example": "Invalid image data"
-                    },
-                    "weight": {
-                      "type": "number",
-                      "description": "Weight value that caused the error (if applicable)",
-                      "example": 0
+                      "example": "Invalid API key"
                     }
                   }
                 }
@@ -174,12 +175,7 @@
                     "error": {
                       "type": "string",
                       "description": "Error message",
-                      "example": "Invalid image data"
-                    },
-                    "weight": {
-                      "type": "number",
-                      "description": "Weight value that caused the error (if applicable)",
-                      "example": 0
+                      "example": "Internal server error"
                     }
                   }
                 }
@@ -202,7 +198,7 @@
     "schemas": {
       "WeightCaptureRequest": {
         "type": "object",
-        "required": ["farmer_id", "produce_name", "image_base64"],
+        "required": ["farmer_id", "produce_name"],
         "properties": {
           "farmer_id": {
             "type": "string",
@@ -217,8 +213,14 @@
           "image_base64": {
             "type": "string",
             "format": "base64",
-            "description": "Base64-encoded image of the scale display",
+            "description": "Base64-encoded image of the scale display (alternative to image_url)",
             "example": "iVBORw0KGgoAAAANSUhEUgAA..."
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the image of the scale display (preferred for webapp integration)",
+            "example": "https://storage.example.com/images/scale_photo_123.jpg"
           }
         }
       },
@@ -252,18 +254,18 @@
               },
               "confidence": {
                 "type": "number",
-                "description": "OCR confidence score (0-1)",
+                "description": "Claude AI confidence score (0-1)",
                 "example": 0.95
               },
               "raw_text": {
                 "type": "string",
-                "description": "Raw text extracted by OCR",
+                "description": "Raw text extracted by Claude AI",
                 "example": "2.5 kg"
               },
               "method": {
                 "type": "string",
                 "description": "Method used for extraction",
-                "example": "ocr"
+                "example": "claude_api"
               }
             }
           },
