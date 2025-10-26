@@ -276,16 +276,6 @@
             readonly
           />
         </div>
-
-        <div class="server-input">
-          <label for="produceName">Produce Name</label>
-          <input
-            type="text"
-            id="produceName"
-            placeholder="Detected produce name will appear here"
-            readonly
-          />
-        </div>
       </div>
 
       <div class="status" id="status">
@@ -313,7 +303,9 @@
       // Initialize farmer ID from URL parameter
       function initializeFarmerId() {
         const farmerId =
-          getUrlParameter("farmer_id") || getUrlParameter("farmerid");
+          getUrlParameter("farmer_id") ||
+          getUrlParameter("farmerid") ||
+          getUrlParameter("farmerId");
         if (farmerId) {
           document.getElementById("farmerId").value = farmerId;
           log(`Farmer ID loaded from URL: ${farmerId}`);
@@ -541,8 +533,7 @@
               `Captured: ${result.name} - ${result.price} ${result.unit}`
             );
 
-            // Update produce name field
-            document.getElementById("produceName").value = result.name;
+            // Produce name is automatically detected and used
 
             // Reset for next capture
             detectedProduce = null;

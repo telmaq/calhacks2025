@@ -7,7 +7,6 @@ import numpy as np
 import json
 import base64
 from typing import List, Optional
-from ultralytics import YOLO
 import httpx
 import requests
 from pydantic import BaseModel
@@ -160,40 +159,8 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# Load YOLOv8 model at startup
-
 # Use smaller model to reduce memory footprint
 model = None
-
-def initialize_models():
-    """Initialize models at startup to avoid timeout issues"""
-    global model
-    print("Initializing AI models...")
-
-    try:
-        print("  - Loading YOLOv8 model...")
-        # Options: yolov8n.pt (nano), yolov8s.pt (small), yolov8m.pt (medium), yolov8l.pt (large)
-        model = YOLO('yolov8m.pt')  # Medium model - best accuracy within 4GB limit
-        print("  YOLOv8 model loaded successfully")
-
-        print("  - Claude API ready...")
-        print("  Claude API configured successfully")
-
-        print("All models initialized successfully!")
-
-    except Exception as e:
-        print(f"Error initializing models: {e}")
-        print("Models will be loaded on first use")
-        # Continue without models - they'll be loaded on first use
-        model = None
-
-def get_model():
-    global model
-    if model is None:
-        print("Model not initialized, loading now...")
-        model = YOLO('yolov8m.pt')  # Medium model
-    return model
-
 
 
 async def extract_weight_from_scale(frame: np.ndarray) -> dict:
@@ -233,23 +200,33 @@ async def extract_weight_from_scale(frame: np.ndarray) -> dict:
                         },
                         {
                             "type": "text",
-                            "text": """Look at this digital scale display and extract the weight value and unit.
+                            "text": """Look at this image of produce on a digital scale and extract the following information:
+
+1. Weight value and unit from the digital display
+2. Name of the produce item
+3. Description of the produce
+4. Category (must be one of: Vegetables, Fruits, Dairy, Grains, Meat, Other)
 
 You must respond with ONLY a valid JSON object in this exact format:
 {
     "weight": <number>,
     "unit": "<unit>",
+    "name": "<produce name>",
+    "description": "<brief description>",
+    "category": "<category>",
     "confidence": <0.0-1.0>
 }
 
 Examples:
-- If you see "54 g" return: {"weight": 54, "unit": "g", "confidence": 0.95}
-- If you see "1.5 kg" return: {"weight": 1.5, "unit": "kg", "confidence": 0.90}
-- If you see just "25" return: {"weight": 25, "unit": "g", "confidence": 0.85}
+- If you see tomatoes weighing "54 g" return: {"weight": 54, "unit": "g", "name": "Tomatoes", "description": "Fresh red tomatoes", "category": "Vegetables", "confidence": 0.95}
+- If you see apples weighing "1.5 kg" return: {"weight": 1.5, "unit": "kg", "name": "Apples", "description": "Red apples", "category": "Fruits", "confidence": 0.90}
+- If you see cheese weighing "250 g" return: {"weight": 250, "unit": "g", "name": "Cheese", "description": "Block of cheese", "category": "Dairy", "confidence": 0.88}
 
-If you cannot clearly read a weight value, return: {"weight": 0, "unit": "g", "confidence": 0.0}
+Category must be exactly one of: vegetables, fruits, dairy, grains, meat, other
 
-Focus on the digital display area and ignore any other text or numbers in the image. Return ONLY the JSON object, no other text."""
+If you cannot clearly read a weight value or identify the produce, return: {"weight": 0, "unit": "g", "name": "Unknown", "description": "Unable to identify", "category": "Other", "confidence": 0.0}
+
+Focus on both the digital display area and the produce item. Return ONLY the JSON object, no other text."""
                         }
                     ]
                 }
@@ -276,33 +253,39 @@ Focus on the digital display area and ignore any other text or numbers in the im
                     raise ValueError("No valid JSON found")
 
             # Validate the response
-            if 'weight' in weight_data and 'unit' in weight_data and 'confidence' in weight_data:
+            if all(field in weight_data for field in ['weight', 'unit', 'name', 'description', 'category', 'confidence']):
                 weight = float(weight_data['weight'])
                 unit = str(weight_data['unit']).lower().strip()
+                name = str(weight_data['name']).strip()
+                description = str(weight_data['description']).strip()
+                category = str(weight_data['category']).strip()
                 confidence = float(weight_data['confidence'])
 
-                print(f"✅ Claude detected: {weight} {unit} (confidence: {confidence:.2f})")
+                # Validate category
+                valid_categories = ['vegetables', 'fruits', 'dairy', 'grains', 'meat', 'other']
+                if category not in valid_categories:
+                    print(f"⚠️ Invalid category '{category}', defaulting to 'Other'")
+                    category = 'Other'
+
+                print(f"✅ Claude detected: {name} - {weight} {unit} ({category}, confidence: {confidence:.2f})")
 
                 return {
                     'weight': weight,
                     'unit': unit,
-                    # 'description': f"Captured produce. {description_text}",
-                    'category': 'Produce',
-                    'price': weight,
+                    'name': name,
+                    'description': description,
+                    'category': category,
+                    'price': weight,  # Using weight as price for now
                     'stock_quantity': 1,
                     'image_url': None,
                     'available': True,
-                    # 'data_creator': data['farmer_id'],
-                    # 'data_updater': data['farmer_id'],
-                    # 'create_time': datetime.now().isoformat(),
-                    # 'update_time': datetime.now().isoformat(),
                     'confidence': confidence,
-                    # 'raw_text': f"{weight} {unit}",
                     'method': 'claude_api'
                 }
             else:
+                missing_fields = [field for field in ['weight', 'unit', 'name', 'description', 'category', 'confidence'] if field not in weight_data]
                 print(f"❌ Invalid Claude response format: {weight_data}")
-                print(f"   Missing required fields: weight={weight_data.get('weight')}, unit={weight_data.get('unit')}, confidence={weight_data.get('confidence')}")
+                print(f"   Missing required fields: {missing_fields}")
 
         except (json.JSONDecodeError, ValueError, KeyError) as e:
             print(f"Error parsing Claude response: {e}")
@@ -314,64 +297,12 @@ Focus on the digital display area and ignore any other text or numbers in the im
     return {
         'weight': 0.0,
         'unit': 'g',
+        'name': 'Unknown',
+        'description': 'Unable to identify',
+        'category': 'Other',
         'confidence': 0.0,
         'error': 'Failed to read weight from image',
         'method': 'claude_api'
-    }
-def detect_produce(frame: np.ndarray) -> dict:
-    """Detect produce items using YOLOv8 object detection"""
-    # Run YOLOv8 inference
-    model = get_model()
-    results = model(frame, conf=0.5)
-
-    # Filter for produce-related classes (COCO dataset classes)
-    produce_classes = {
-        0: 'person',  # Sometimes farmers are in frame
-        47: 'apple', 48: 'orange', 49: 'broccoli', 50: 'carrot',
-        51: 'hot dog', 52: 'pizza', 53: 'donut', 54: 'cake',
-        55: 'chair', 56: 'couch', 57: 'potted plant', 58: 'bed',
-        59: 'dining table', 60: 'toilet', 61: 'tv', 62: 'laptop',
-        63: 'mouse', 64: 'remote', 65: 'keyboard', 66: 'cell phone',
-        67: 'microwave', 68: 'oven', 69: 'toaster', 70: 'sink',
-        71: 'refrigerator', 72: 'book', 73: 'clock', 74: 'vase',
-        75: 'scissors', 76: 'teddy bear', 77: 'hair drier', 78: 'toothbrush'
-    }
-
-    # Focus on food-related items that could be produce
-    food_classes = [47, 48, 49, 50, 51, 52, 53, 54]  # apple, orange, broccoli, carrot, etc.
-
-    annotated_frame = frame.copy()
-    detected_objects = []
-
-    for result in results:
-        boxes = result.boxes
-        if boxes is not None:
-            for box in boxes:
-                class_id = int(box.cls[0])
-                confidence = float(box.conf[0])
-
-                # Only process food-related items
-                if class_id in food_classes:
-                    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
-
-                    # Draw bounding box
-                    cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-                    # Add label
-                    label = f"{produce_classes.get(class_id, 'unknown')}: {confidence:.2f}"
-                    cv2.putText(annotated_frame, label, (x1, y1 - 10),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-                    detected_objects.append({
-                        'class': produce_classes.get(class_id, 'unknown'),
-                        'confidence': confidence,
-                        'bbox': [int(x1), int(y1), int(x2), int(y2)]
-                    })
-
-    return annotated_frame, {
-        'objects_detected': len(detected_objects),
-        'detected_objects': detected_objects,
-        'confidence': max([obj['confidence'] for obj in detected_objects], default=0.0)
     }
 
 @app.post("/api/v1/capture/weight",
@@ -454,9 +385,11 @@ async def capture_weight(
             if sheets_service:
                 product_id = await write_to_google_sheets({
                     'farmer_id': request.farmer_id,
-                    'produce_name': request.produce_name,
+                    'produce_name': weight_data.get('name', 'Unknown Produce'),  # Use Claude-detected name
                     'weight': weight_data['weight'],
-                    'unit': weight_data['unit']
+                    'unit': weight_data['unit'],
+                    'description': weight_data.get('description', ''),
+                    'category': weight_data.get('category', 'other')
                 })
                 print(f"✅ Saved to Google Sheets: {product_id}")
             else:
@@ -468,7 +401,6 @@ async def capture_weight(
         return JSONResponse(content={
             "status": "success",
             "farmer_id": request.farmer_id,
-            "produce_name": request.produce_name,
             "weight_data": {
                 "weight": weight_data['weight'],
                 "unit": weight_data['unit'],
@@ -480,7 +412,9 @@ async def capture_weight(
             "creao_logged": False,
             "id": product_id,
             "seller_id": request.farmer_id,
-            "name": request.produce_name,
+            "name": weight_data.get('name', 'Unknown Produce'),  # Use Claude-detected name
+            "description": weight_data.get('description', ''),
+            "category": weight_data.get('category', 'other'),
             "price": weight_data['weight'],
             "unit": weight_data['unit']
         })
