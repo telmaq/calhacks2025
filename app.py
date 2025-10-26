@@ -90,9 +90,9 @@ async def write_to_google_sheets(data: dict) -> str:
         row_data = [
             product_id,                    # ID
             data["farmer_id"],            # Seller ID
-            data["produce_name"],         # Name
-            f"Captured produce: {data['produce_name']}",  # Description
-            "vegetables",                 # Category (default to vegetables)
+            data["produce_name"],         # Name (Claude-detected)
+            data.get("description", f"Captured produce: {data['produce_name']}"),  # Description (Claude-detected)
+            data.get("category", "other"), # Category (Claude-detected)
             data["weight"],               # Price (using weight as price)
             data["unit"],                 # Unit
             1,                            # Stock
