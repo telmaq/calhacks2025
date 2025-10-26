@@ -1,0 +1,660 @@
+[
+  {
+    "farmer_id": "100019a1edcbeed766ea9c19842fdcfa5f1",
+    "farmer_name": "Luis",
+    "data": [
+      {
+        "week_start": "2025-08-03",
+        "crop": "tomato",
+        "total_supplied_kg": 103,
+        "total_sold_kg": 73,
+        "avg_delivery_delay_min": 33
+      },
+      {
+        "week_start": "2025-08-10",
+        "crop": "carrot",
+        "total_supplied_kg": 282,
+        "total_sold_kg": 250,
+        "avg_delivery_delay_min": 36
+      },
+      {
+        "week_start": "2025-08-17",
+        "crop": "tomato",
+        "total_supplied_kg": 440,
+        "total_sold_kg": 416,
+        "avg_delivery_delay_min": 30
+      },
+      {
+        "week_start": "2025-08-24",
+        "crop": "carrot",
+        "total_supplied_kg": 179,
+        "total_sold_kg": 132,
+        "avg_delivery_delay_min": 31
+      },
+      {
+        "week_start": "2025-08-31",
+        "crop": "mango",
+        "total_supplied_kg": 324,
+        "total_sold_kg": 239,
+        "avg_delivery_delay_min": 10
+      },
+      {
+        "week_start": "2025-09-07",
+        "crop": "carrot",
+        "total_supplied_kg": 518,
+        "total_sold_kg": 450,
+        "avg_delivery_delay_min": 19
+      },
+      {
+        "week_start": "2025-09-14",
+        "crop": "lettuce",
+        "total_supplied_kg": 558,
+        "total_sold_kg": 419,
+        "avg_delivery_delay_min": 16
+      },
+      {
+        "week_start": "2025-09-21",
+        "crop": "mango",
+        "total_supplied_kg": 421,
+        "total_sold_kg": 381,
+        "avg_delivery_delay_min": 10
+      },
+      {
+        "week_start": "2025-09-28",
+        "crop": "carrot",
+        "total_supplied_kg": 580,
+        "total_sold_kg": 526,
+        "avg_delivery_delay_min": 19
+      },
+      {
+        "week_start": "2025-10-05",
+        "crop": "tomato",
+        "total_supplied_kg": 454,
+        "total_sold_kg": 383,
+        "avg_delivery_delay_min": 28
+      },
+      {
+        "week_start": "2025-10-12",
+        "crop": "lettuce",
+        "total_supplied_kg": 455,
+        "total_sold_kg": 321,
+        "avg_delivery_delay_min": 18
+      },
+      {
+        "week_start": "2025-10-19",
+        "crop": "carrot",
+        "total_supplied_kg": 385,
+        "total_sold_kg": 306,
+        "avg_delivery_delay_min": 40
+      }
+    ],
+    "metadata": {
+      "total_orders": 12,
+      "total_revenue": 38960
+    }
+  },
+  {
+    "farmer_id": "100019a1efaa5937cc1b8ce823ec6e4ec4f",
+    "farmer_name": "Luis",
+    "data": [
+      {
+        "week_start": "2025-08-03",
+        "crop": "carrot",
+        "total_supplied_kg": 402,
+        "total_sold_kg": 353,
+        "avg_delivery_delay_min": 17
+      },
+      {
+        "week_start": "2025-08-10",
+        "crop": "tomato",
+        "total_supplied_kg": 532,
+        "total_sold_kg": 454,
+        "avg_delivery_delay_min": 22
+      },
+      {
+        "week_start": "2025-08-17",
+        "crop": "carrot",
+        "total_supplied_kg": 120,
+        "total_sold_kg": 107,
+        "avg_delivery_delay_min": 25
+      },
+      {
+        "week_start": "2025-08-24",
+        "crop": "mango",
+        "total_supplied_kg": 344,
+        "total_sold_kg": 272,
+        "avg_delivery_delay_min": 12
+      },
+      {
+        "week_start": "2025-08-31",
+        "crop": "lettuce",
+        "total_supplied_kg": 139,
+        "total_sold_kg": 119,
+        "avg_delivery_delay_min": 20
+      },
+      {
+        "week_start": "2025-09-07",
+        "crop": "lettuce",
+        "total_supplied_kg": 214,
+        "total_sold_kg": 185,
+        "avg_delivery_delay_min": 36
+      },
+      {
+        "week_start": "2025-09-14",
+        "crop": "lettuce",
+        "total_supplied_kg": 150,
+        "total_sold_kg": 134,
+        "avg_delivery_delay_min": 27
+      },
+      {
+        "week_start": "2025-09-21",
+        "crop": "carrot",
+        "total_supplied_kg": 536,
+        "total_sold_kg": 496,
+        "avg_delivery_delay_min": 24
+      },
+      {
+        "week_start": "2025-09-28",
+        "crop": "mango",
+        "total_supplied_kg": 513,
+        "total_sold_kg": 383,
+        "avg_delivery_delay_min": 27
+      },
+      {
+        "week_start": "2025-10-05",
+        "crop": "tomato",
+        "total_supplied_kg": 298,
+        "total_sold_kg": 277,
+        "avg_delivery_delay_min": 33
+      },
+      {
+        "week_start": "2025-10-12",
+        "crop": "lettuce",
+        "total_supplied_kg": 419,
+        "total_sold_kg": 363,
+        "avg_delivery_delay_min": 23
+      },
+      {
+        "week_start": "2025-10-19",
+        "crop": "mango",
+        "total_supplied_kg": 200,
+        "total_sold_kg": 184,
+        "avg_delivery_delay_min": 37
+      }
+    ],
+    "metadata": {
+      "total_orders": 12,
+      "total_revenue": 33270
+    }
+  },
+  {
+    "farmer_id": "100019a1f37e91374c3869ee6d172d6d4cd",
+    "farmer_name": "test",
+    "data": [
+      {
+        "week_start": "2025-08-03",
+        "crop": "lettuce",
+        "total_supplied_kg": 369,
+        "total_sold_kg": 259,
+        "avg_delivery_delay_min": 16
+      },
+      {
+        "week_start": "2025-08-10",
+        "crop": "mango",
+        "total_supplied_kg": 581,
+        "total_sold_kg": 517,
+        "avg_delivery_delay_min": 21
+      },
+      {
+        "week_start": "2025-08-17",
+        "crop": "carrot",
+        "total_supplied_kg": 252,
+        "total_sold_kg": 220,
+        "avg_delivery_delay_min": 37
+      },
+      {
+        "week_start": "2025-08-24",
+        "crop": "lettuce",
+        "total_supplied_kg": 575,
+        "total_sold_kg": 450,
+        "avg_delivery_delay_min": 16
+      },
+      {
+        "week_start": "2025-08-31",
+        "crop": "mango",
+        "total_supplied_kg": 475,
+        "total_sold_kg": 361,
+        "avg_delivery_delay_min": 24
+      },
+      {
+        "week_start": "2025-09-07",
+        "crop": "lettuce",
+        "total_supplied_kg": 263,
+        "total_sold_kg": 224,
+        "avg_delivery_delay_min": 25
+      },
+      {
+        "week_start": "2025-09-14",
+        "crop": "mango",
+        "total_supplied_kg": 247,
+        "total_sold_kg": 189,
+        "avg_delivery_delay_min": 39
+      },
+      {
+        "week_start": "2025-09-21",
+        "crop": "mango",
+        "total_supplied_kg": 244,
+        "total_sold_kg": 170,
+        "avg_delivery_delay_min": 31
+      },
+      {
+        "week_start": "2025-09-28",
+        "crop": "carrot",
+        "total_supplied_kg": 490,
+        "total_sold_kg": 442,
+        "avg_delivery_delay_min": 39
+      },
+      {
+        "week_start": "2025-10-05",
+        "crop": "lettuce",
+        "total_supplied_kg": 174,
+        "total_sold_kg": 147,
+        "avg_delivery_delay_min": 35
+      },
+      {
+        "week_start": "2025-10-12",
+        "crop": "lettuce",
+        "total_supplied_kg": 270,
+        "total_sold_kg": 196,
+        "avg_delivery_delay_min": 34
+      },
+      {
+        "week_start": "2025-10-19",
+        "crop": "lettuce",
+        "total_supplied_kg": 287,
+        "total_sold_kg": 219,
+        "avg_delivery_delay_min": 24
+      }
+    ],
+    "metadata": {
+      "total_orders": 12,
+      "total_revenue": 33940
+    }
+  },
+  {
+    "farmer_id": "100019a1f4045b77553bf2d53ed934d8697",
+    "farmer_name": NaN,
+    "data": [
+      {
+        "week_start": "2025-08-03",
+        "crop": "tomato",
+        "total_supplied_kg": 401,
+        "total_sold_kg": 352,
+        "avg_delivery_delay_min": 16
+      },
+      {
+        "week_start": "2025-08-10",
+        "crop": "tomato",
+        "total_supplied_kg": 246,
+        "total_sold_kg": 202,
+        "avg_delivery_delay_min": 12
+      },
+      {
+        "week_start": "2025-08-17",
+        "crop": "lettuce",
+        "total_supplied_kg": 263,
+        "total_sold_kg": 213,
+        "avg_delivery_delay_min": 15
+      },
+      {
+        "week_start": "2025-08-24",
+        "crop": "lettuce",
+        "total_supplied_kg": 521,
+        "total_sold_kg": 485,
+        "avg_delivery_delay_min": 16
+      },
+      {
+        "week_start": "2025-08-31",
+        "crop": "tomato",
+        "total_supplied_kg": 390,
+        "total_sold_kg": 287,
+        "avg_delivery_delay_min": 28
+      },
+      {
+        "week_start": "2025-09-07",
+        "crop": "mango",
+        "total_supplied_kg": 449,
+        "total_sold_kg": 383,
+        "avg_delivery_delay_min": 37
+      },
+      {
+        "week_start": "2025-09-14",
+        "crop": "carrot",
+        "total_supplied_kg": 577,
+        "total_sold_kg": 420,
+        "avg_delivery_delay_min": 11
+      },
+      {
+        "week_start": "2025-09-21",
+        "crop": "mango",
+        "total_supplied_kg": 262,
+        "total_sold_kg": 189,
+        "avg_delivery_delay_min": 24
+      },
+      {
+        "week_start": "2025-09-28",
+        "crop": "tomato",
+        "total_supplied_kg": 378,
+        "total_sold_kg": 342,
+        "avg_delivery_delay_min": 19
+      },
+      {
+        "week_start": "2025-10-05",
+        "crop": "carrot",
+        "total_supplied_kg": 323,
+        "total_sold_kg": 227,
+        "avg_delivery_delay_min": 32
+      },
+      {
+        "week_start": "2025-10-12",
+        "crop": "lettuce",
+        "total_supplied_kg": 357,
+        "total_sold_kg": 307,
+        "avg_delivery_delay_min": 38
+      },
+      {
+        "week_start": "2025-10-19",
+        "crop": "carrot",
+        "total_supplied_kg": 463,
+        "total_sold_kg": 394,
+        "avg_delivery_delay_min": 23
+      }
+    ],
+    "metadata": {
+      "total_orders": 12,
+      "total_revenue": 38010
+    }
+  },
+  {
+    "farmer_id": "100019a203fae6372b0bb99f72d5cde1d24",
+    "farmer_name": "test",
+    "data": [
+      {
+        "week_start": "2025-08-03",
+        "crop": "lettuce",
+        "total_supplied_kg": 457,
+        "total_sold_kg": 391,
+        "avg_delivery_delay_min": 34
+      },
+      {
+        "week_start": "2025-08-10",
+        "crop": "lettuce",
+        "total_supplied_kg": 493,
+        "total_sold_kg": 458,
+        "avg_delivery_delay_min": 21
+      },
+      {
+        "week_start": "2025-08-17",
+        "crop": "tomato",
+        "total_supplied_kg": 593,
+        "total_sold_kg": 557,
+        "avg_delivery_delay_min": 32
+      },
+      {
+        "week_start": "2025-08-24",
+        "crop": "mango",
+        "total_supplied_kg": 231,
+        "total_sold_kg": 197,
+        "avg_delivery_delay_min": 11
+      },
+      {
+        "week_start": "2025-08-31",
+        "crop": "tomato",
+        "total_supplied_kg": 364,
+        "total_sold_kg": 280,
+        "avg_delivery_delay_min": 16
+      },
+      {
+        "week_start": "2025-09-07",
+        "crop": "tomato",
+        "total_supplied_kg": 351,
+        "total_sold_kg": 260,
+        "avg_delivery_delay_min": 31
+      },
+      {
+        "week_start": "2025-09-14",
+        "crop": "lettuce",
+        "total_supplied_kg": 555,
+        "total_sold_kg": 478,
+        "avg_delivery_delay_min": 34
+      },
+      {
+        "week_start": "2025-09-21",
+        "crop": "tomato",
+        "total_supplied_kg": 536,
+        "total_sold_kg": 504,
+        "avg_delivery_delay_min": 15
+      },
+      {
+        "week_start": "2025-09-28",
+        "crop": "tomato",
+        "total_supplied_kg": 378,
+        "total_sold_kg": 304,
+        "avg_delivery_delay_min": 23
+      },
+      {
+        "week_start": "2025-10-05",
+        "crop": "carrot",
+        "total_supplied_kg": 533,
+        "total_sold_kg": 462,
+        "avg_delivery_delay_min": 36
+      },
+      {
+        "week_start": "2025-10-12",
+        "crop": "mango",
+        "total_supplied_kg": 363,
+        "total_sold_kg": 321,
+        "avg_delivery_delay_min": 25
+      },
+      {
+        "week_start": "2025-10-19",
+        "crop": "lettuce",
+        "total_supplied_kg": 591,
+        "total_sold_kg": 488,
+        "avg_delivery_delay_min": 18
+      }
+    ],
+    "metadata": {
+      "total_orders": 12,
+      "total_revenue": 47000
+    }
+  },
+  {
+    "farmer_id": "100019a204b913572f5b3499a34999c119c",
+    "farmer_name": "t2",
+    "data": [
+      {
+        "week_start": "2025-08-03",
+        "crop": "tomato",
+        "total_supplied_kg": 354,
+        "total_sold_kg": 286,
+        "avg_delivery_delay_min": 10
+      },
+      {
+        "week_start": "2025-08-10",
+        "crop": "carrot",
+        "total_supplied_kg": 155,
+        "total_sold_kg": 135,
+        "avg_delivery_delay_min": 25
+      },
+      {
+        "week_start": "2025-08-17",
+        "crop": "lettuce",
+        "total_supplied_kg": 213,
+        "total_sold_kg": 196,
+        "avg_delivery_delay_min": 34
+      },
+      {
+        "week_start": "2025-08-24",
+        "crop": "lettuce",
+        "total_supplied_kg": 473,
+        "total_sold_kg": 401,
+        "avg_delivery_delay_min": 16
+      },
+      {
+        "week_start": "2025-08-31",
+        "crop": "tomato",
+        "total_supplied_kg": 340,
+        "total_sold_kg": 314,
+        "avg_delivery_delay_min": 37
+      },
+      {
+        "week_start": "2025-09-07",
+        "crop": "lettuce",
+        "total_supplied_kg": 358,
+        "total_sold_kg": 297,
+        "avg_delivery_delay_min": 26
+      },
+      {
+        "week_start": "2025-09-14",
+        "crop": "mango",
+        "total_supplied_kg": 399,
+        "total_sold_kg": 357,
+        "avg_delivery_delay_min": 19
+      },
+      {
+        "week_start": "2025-09-21",
+        "crop": "mango",
+        "total_supplied_kg": 463,
+        "total_sold_kg": 350,
+        "avg_delivery_delay_min": 38
+      },
+      {
+        "week_start": "2025-09-28",
+        "crop": "tomato",
+        "total_supplied_kg": 116,
+        "total_sold_kg": 82,
+        "avg_delivery_delay_min": 13
+      },
+      {
+        "week_start": "2025-10-05",
+        "crop": "carrot",
+        "total_supplied_kg": 594,
+        "total_sold_kg": 514,
+        "avg_delivery_delay_min": 21
+      },
+      {
+        "week_start": "2025-10-12",
+        "crop": "carrot",
+        "total_supplied_kg": 269,
+        "total_sold_kg": 195,
+        "avg_delivery_delay_min": 12
+      },
+      {
+        "week_start": "2025-10-19",
+        "crop": "carrot",
+        "total_supplied_kg": 511,
+        "total_sold_kg": 447,
+        "avg_delivery_delay_min": 12
+      }
+    ],
+    "metadata": {
+      "total_orders": 12,
+      "total_revenue": 35740
+    }
+  },
+  {
+    "farmer_id": "100019a20c7e91b717bb4861e02171f5fbe",
+    "farmer_name": "M",
+    "data": [
+      {
+        "week_start": "2025-08-03",
+        "crop": "tomato",
+        "total_supplied_kg": 152,
+        "total_sold_kg": 106,
+        "avg_delivery_delay_min": 25
+      },
+      {
+        "week_start": "2025-08-10",
+        "crop": "tomato",
+        "total_supplied_kg": 300,
+        "total_sold_kg": 222,
+        "avg_delivery_delay_min": 39
+      },
+      {
+        "week_start": "2025-08-17",
+        "crop": "mango",
+        "total_supplied_kg": 578,
+        "total_sold_kg": 407,
+        "avg_delivery_delay_min": 12
+      },
+      {
+        "week_start": "2025-08-24",
+        "crop": "carrot",
+        "total_supplied_kg": 323,
+        "total_sold_kg": 248,
+        "avg_delivery_delay_min": 16
+      },
+      {
+        "week_start": "2025-08-31",
+        "crop": "lettuce",
+        "total_supplied_kg": 423,
+        "total_sold_kg": 325,
+        "avg_delivery_delay_min": 25
+      },
+      {
+        "week_start": "2025-09-07",
+        "crop": "lettuce",
+        "total_supplied_kg": 534,
+        "total_sold_kg": 464,
+        "avg_delivery_delay_min": 28
+      },
+      {
+        "week_start": "2025-09-14",
+        "crop": "carrot",
+        "total_supplied_kg": 507,
+        "total_sold_kg": 369,
+        "avg_delivery_delay_min": 30
+      },
+      {
+        "week_start": "2025-09-21",
+        "crop": "mango",
+        "total_supplied_kg": 327,
+        "total_sold_kg": 265,
+        "avg_delivery_delay_min": 31
+      },
+      {
+        "week_start": "2025-09-28",
+        "crop": "carrot",
+        "total_supplied_kg": 501,
+        "total_sold_kg": 360,
+        "avg_delivery_delay_min": 21
+      },
+      {
+        "week_start": "2025-10-05",
+        "crop": "carrot",
+        "total_supplied_kg": 225,
+        "total_sold_kg": 190,
+        "avg_delivery_delay_min": 28
+      },
+      {
+        "week_start": "2025-10-12",
+        "crop": "mango",
+        "total_supplied_kg": 219,
+        "total_sold_kg": 204,
+        "avg_delivery_delay_min": 24
+      },
+      {
+        "week_start": "2025-10-19",
+        "crop": "mango",
+        "total_supplied_kg": 140,
+        "total_sold_kg": 124,
+        "avg_delivery_delay_min": 18
+      }
+    ],
+    "metadata": {
+      "total_orders": 12,
+      "total_revenue": 32840
+    }
+  }
+]

@@ -18,7 +18,7 @@ Usage:
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import json
 import os
 from datetime import datetime
@@ -234,6 +234,44 @@ async def delete_farmer_data(farmer_id: str):
         return {"status": "success", "message": "Farmer data deleted"}
     raise HTTPException(status_code=404, detail="Farmer not found")
 
+@app.post("/api/creao/bulk-upload")
+async def bulk_upload_creao_data(farmers: List[Dict[str, Any]]):
+    """
+    Bulk upload data for multiple farmers from Creao database.
+    
+    Expected format:
+    [
+      {
+        "farmer_id": "...",
+        "farmer_name": "...",
+        "data": [...],
+        "metadata": {}
+      }
+    ]
+    """
+    try:
+        uploaded_count = 0
+        for farmer_entry in farmers:
+            farmer_id = farmer_entry.get('farmer_id')
+            if not farmer_id:
+                continue
+            
+            farmer_data_store[farmer_id] = {
+                "farmer_name": farmer_entry.get('farmer_name', f'Farmer {farmer_id}'),
+                "data": farmer_entry.get('data', []),
+                "metadata": farmer_entry.get('metadata', {}),
+                "updated_at": datetime.now().isoformat()
+            }
+            uploaded_count += 1
+        
+        return {
+            "status": "success",
+            "farmers_uploaded": uploaded_count,
+            "message": f"Successfully uploaded data for {uploaded_count} farmers"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/")
 async def root():
     """API homepage with available endpoints"""
@@ -246,6 +284,7 @@ async def root():
         "endpoints": {
             "send_data": "POST /api/data/send",
             "generate_analytics": "POST /api/analytics/generate",
+            "bulk_upload": "POST /api/creao/bulk-upload",
             "list_farmers": "GET /api/farmers",
             "get_farmer_data": "GET /api/farmers/{id}/data",
             "delete_farmer": "DELETE /api/farmers/{id}",
@@ -256,7 +295,8 @@ async def root():
         "quick_start": {
             "1_send_data": "POST /api/data/send with farmer_id and data",
             "2_get_analytics": "POST /api/analytics/generate with farmer_id",
-            "3_view_docs": "Visit /docs for interactive API documentation"
+            "3_bulk_upload": "POST /api/creao/bulk-upload with multiple farmers",
+            "4_view_docs": "Visit /docs for interactive API documentation"
         },
         "documentation": "/docs"
     }
