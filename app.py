@@ -128,21 +128,36 @@ def get_model():
     return model
 
 async def write_to_supabase(data: dict) -> dict:
-    """Write produce data to Supabase produce table"""
+    """Write product data to Supabase product table"""
     if not supabase:
         raise Exception("Supabase client not initialized")
 
     try:
+        import uuid
+        from datetime import datetime
+
+        # Generate UUID for product ID
+        product_id = str(uuid.uuid4())
+
+        # Map the fields to match the product table
         record = {
-            "farmer_id": data["farmer_id"],
-            "produce_name": data["produce_name"],
-            "weight": data["weight"],
+            "id": product_id,
+            "seller_id": data["farmer_id"],  # farmer_id maps to seller_id
+            "name": data["produce_name"],
+            "description": f"Captured produce: {data['produce_name']}",
+            "category": "Produce",
+            "price": data["weight"],  # Weight becomes price (can be adjusted)
             "unit": data["unit"],
-            "weight_confidence": data.get("confidence", 0.0),
-            "creao_logged": False
+            "stock_quantity": 1,
+            "image_url": None,
+            "available": True,
+            "data_creator": data["farmer_id"],
+            "data_updater": data["farmer_id"],
+            "create_time": datetime.now().isoformat(),
+            "update_time": datetime.now().isoformat()
         }
 
-        result = supabase.table("produce").insert(record).execute()
+        result = supabase.table("product").insert(record).execute()
 
         return {
             "success": True,
@@ -339,54 +354,7 @@ async def capture_weight(
     print(f"   - image_url: {request.image_url}")
     print(f"   - using: {'base64' if request.image_base64 else 'URL' if request.image_url else 'neither'}")
     # print(f"   - API key: {api_key[:10]}...")
-    """
-    Capture weight from a scale image using Claude AI vision.
 
-    **Process:**
-    1. Receives image and context (farmer_id, produce_name)
-    2. Sends image to Claude API for analysis
-    3. Claude extracts weight value and unit from digital display
-    4. Validates the extracted data
-    5. Returns structured weight data
-
-    **Authentication:** Bearer token required
-
-    **Example Request (with base64):**
-    ```json
-    {
-        "farmer_id": "farmer123",
-        "produce_name": "apples",
-        "image_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ..."
-    }
-    ```
-
-    **Example Request (with URL):**
-    ```json
-    {
-        "farmer_id": "farmer123",
-        "produce_name": "apples",
-        "image_url": "https://example.com/image.jpg"
-    }
-    ```
-
-    **Example Response:**
-    ```json
-    {
-        "status": "success",
-        "farmer_id": "farmer123",
-        "produce_name": "apples",
-        "weight_data": {
-            "weight": 5.2,
-            "unit": "kg",
-            "confidence": 0.96,
-            "raw_text": "5.2 kg",
-            "method": "ocr"
-        },
-        "message": "Weight 5.2 kg captured!",
-        "creao_logged": false
-    }
-    ```
-    """
     try:
         # Process image from either base64 or URL
         if not request.image_base64 and not request.image_url:

@@ -220,6 +220,24 @@
           if (response.ok) {
             updateStatus(`✅ ${data.message}`, "success");
             console.log("Response:", data);
+
+            // Send data back to Creao (if opened from Creao)
+            if (window.opener) {
+              window.opener.postMessage(
+                {
+                  type: "produce_captured",
+                  data: data
+                },
+                "*"
+              ); // Replace '*' with specific Creao domain in production
+              console.log("✅ Data sent to Creao");
+
+              // Close window after 2 seconds
+              setTimeout(() => {
+                updateStatus("✅ Closing window...", "success");
+                setTimeout(() => window.close(), 1000);
+              }, 2000);
+            }
           } else {
             updateStatus(`❌ Error: ${data.error}`, "error");
           }
