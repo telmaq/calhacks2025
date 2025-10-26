@@ -15,6 +15,7 @@ import re
 import os
 from dotenv import load_dotenv
 import anthropic
+from supabase import create_client, Client
 load_dotenv()
 
 app = FastAPI(
@@ -42,6 +43,20 @@ API_KEY = os.getenv("API_KEY", "your-secret-api-key-here")
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 # Initialize Claude client
 claude_client = anthropic.Anthropic(api_key=CLAUDE_API_KEY) if CLAUDE_API_KEY else None
+
+# Supabase configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = None
+
+def init_supabase():
+    """Initialize Supabase client"""
+    global supabase
+    if SUPABASE_URL and SUPABASE_KEY:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("✅ Supabase client initialized")
+    else:
+        print("⚠️  Supabase credentials not found")
 
 # def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
 #     """Verify API key for authentication"""
@@ -111,6 +126,33 @@ def get_model():
         print("⚠️  Model not initialized, loading now...")
         model = YOLO('yolov8m.pt')  # Medium model
     return model
+
+async def write_to_supabase(data: dict) -> dict:
+    """Write produce data to Supabase produce table"""
+    if not supabase:
+        raise Exception("Supabase client not initialized")
+
+    try:
+        record = {
+            "farmer_id": data["farmer_id"],
+            "produce_name": data["produce_name"],
+            "weight": data["weight"],
+            "unit": data["unit"],
+            "weight_confidence": data.get("confidence", 0.0),
+            "creao_logged": False
+        }
+
+        result = supabase.table("produce").insert(record).execute()
+
+        return {
+            "success": True,
+            "id": result.data[0]["id"],
+            "record": result.data[0]
+        }
+
+    except Exception as e:
+        print(f"❌ Error writing to Supabase: {e}")
+        raise
 
 async def extract_weight_from_scale(frame: np.ndarray) -> dict:
     """
@@ -401,22 +443,36 @@ async def capture_weight(
                 content={"error": "Invalid weight value", "weight": weight_data['weight']}
             )
 
-        # TODO: Log to Creao database
-        # In production, make an API call to Creao here
-        # creao_response = await log_to_creao({
-        #     'farmer_id': request.farmer_id,
-        #     'produce_name': request.produce_name,
-        #     'weight': weight_data['weight'],
-        #     'unit': weight_data['unit']
-        # })
+        # Write to Supabase
+        supabase_id = None
+        try:
+            if supabase:
+                supabase_result = await write_to_supabase({
+                    'farmer_id': request.farmer_id,
+                    'produce_name': request.produce_name,
+                    'weight': weight_data['weight'],
+                    'unit': weight_data['unit'],
+                    'confidence': weight_data['confidence']
+                })
+                supabase_id = supabase_result['id']
+                print(f"✅ Saved to Supabase: {supabase_id}")
+            else:
+                print("⚠️  Supabase not initialized, skipping database write")
+        except Exception as e:
+            print(f"❌ Failed to write to Supabase: {e}")
 
         return JSONResponse(content={
             "status": "success",
             "farmer_id": request.farmer_id,
-            "produce_name": request.produce_name,
-            "weight_data": weight_data,
-            "message": f"Weight {weight_data['weight']} {weight_data['unit']} captured!",
-            "creao_logged": False  # Set to True when Creao integration is complete
+            "produce": {
+                "name": request.produce_name,
+                "weight": weight_data['weight'],
+                "unit": weight_data['unit'],
+                "confidence": weight_data['confidence']
+            },
+            "supabase_id": supabase_id,
+            "message": f"Produce captured and logged to database",
+            "synced_to_creao": False
         })
 
     except Exception as e:
@@ -506,6 +562,9 @@ async def test_weight_capture():
 if __name__ == "__main__":
     import uvicorn
     import threading
+
+    # Initialize Supabase on startup
+    init_supabase()
 
     # Initialize models in background thread to avoid blocking startup
     def init_models_async():

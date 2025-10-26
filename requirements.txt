@@ -10,3 +10,4 @@ httpx
 requests
 python-dotenv==1.0.1
 anthropic==0.40.0
+supabase==2.0.0
