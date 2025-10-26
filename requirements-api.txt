@@ -1,0 +1,13 @@
+# API Server Requirements
+# Minimal dependencies for dashboard_api.py deployment
+
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+pandas>=2.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Gemini AI (for analytics)
+google-genai>=0.2.0
+

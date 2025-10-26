@@ -1,0 +1,11 @@
+# Dashboard-specific requirements
+dash>=2.14.0
+plotly>=5.18.0
+pandas>=2.0.0
+gunicorn>=21.2.0
+
+# Analytics (already in main requirements.txt)
+google-genai>=0.2.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+

@@ -1,7 +1,7 @@
 fastapi==0.120.0
 uvicorn[standard]==0.38.0
 opencv-python-headless==4.12.0.88
-pillow==12.0.0
+pillow==11.3.0
 numpy==2.2.6
 python-multipart==0.0.20
 websockets==15.0.1
@@ -9,3 +9,16 @@ ultralytics==8.3.221
 easyocr==1.7.2
 torch==2.9.0
 torchvision==0.24.0
+
+# Gemini AI Analytics
+google-genai>=0.2.0
+pandas>=2.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Dashboard (optional - only if using dashboard.py)
+# Uncomment to use the Dash analytics dashboard:
+# dash>=2.14.0
+# plotly>=5.18.0
+# gunicorn>=21.2.0
+# Or install with: pip install -r requirements-dashboard.txt
